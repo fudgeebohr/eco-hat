@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { User, Lock, Leaf } from 'lucide-react';
-import './Auth.css'; 
+import './Auth.css';
 
 const AdminLogin = () => {
-  // 1. Keep these names consistent with what you send to the backend
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,22 +18,19 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
-        username, // This is your Admin ID/Username
-        password,
-        role: 'admin' // 2. Explicitly tell the backend this is an admin login
+      const response = await axios.post('http://localhost:5000/api/auth/login-admin', {
+        username,
+        password
       });
 
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('studentName', response.data.fullName);
         localStorage.setItem('role', 'admin');
-        
-        // 3. Redirect to the Admin Dashboard specifically
-        navigate('/admin-dashboard'); 
+        navigate('/admin-dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.message || 'Invalid username or password.');
     } finally {
       setLoading(false);
     }
@@ -45,9 +41,9 @@ const AdminLogin = () => {
       <div className="auth-card">
         <div className="auth-header">
           <div className="logo-circle">
-            <Leaf size={32} color="#D4AF37" /> {/* Gold accent for admin */}
+            <Leaf size={32} color="#D4AF37" />
           </div>
-          <h2>ECO-HAT Admin</h2>
+          <h2>Admin Login</h2>
           <p>Sign in to the administrator portal</p>
         </div>
 
@@ -58,9 +54,9 @@ const AdminLogin = () => {
             <User className="input-icon" size={20} />
             <input 
               type="text" 
-              placeholder="Admin Username / ID" 
-              value={username} // Fixed variable name
-              onChange={(e) => setUsername(e.target.value)} // Fixed function name
+              placeholder="Username" 
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
