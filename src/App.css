@@ -36,3 +36,13 @@
     transform: rotate(360deg);
   }
 }
+
+.role-card {
+  max-width: 500px; /* Slightly wider to accommodate two big buttons */
+  text-align: center;
+}
+
+.admin-subtext {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
