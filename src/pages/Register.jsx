@@ -25,7 +25,7 @@ const Register = () => {
     if (formData.password !== formData.confirmPassword) return setError("Passwords do not match!");
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register-user', {
+      const response = await axios.post('https://ecohat-node.onrender.com/api/auth/register-user', {
         fullName: formData.fullName,
         studentNumber: formData.studentNumber,
         programAndYear: formData.programAndYear,

@@ -16,7 +16,7 @@ const AdminLogin = () => {
     setError('');
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login-admin', { username, password });
+      const response = await axios.post('https://ecohat-node.onrender.com/api/auth/login-admin', { username, password });
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('adminName', response.data.fullName);
