@@ -13,7 +13,7 @@ const RoleSelection = () => {
           <div className="logo-circle">
             <Leaf size={32} color="#D4AF37" />
           </div>
-          <h2 style={{ color: '#800000' }}>ECO-HAT System</h2>
+          <h2 style={{ color: '#800000' }}>ECO-HAT Portal</h2>
           <p>Please select your access level</p>
         </div>
 
