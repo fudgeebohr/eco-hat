@@ -6,7 +6,7 @@ import './Auth.css';
 
 const AdminRegister = () => {
   const [formData, setFormData] = useState({
-    fullName: '',
+    username: '',
     employeeID: '', // Using Employee ID instead of Student Number
     password: '',
     adminKey: ''
@@ -35,7 +35,7 @@ const AdminRegister = () => {
 
     try {
       const response = await axios.post('http://localhost:5000/api/auth/register', {
-        fullName: formData.fullName,
+        fullName: formData.username,
         studentNumber: formData.employeeID, // Backend uses studentNumber field for ID
         password: formData.password,
         role: 'admin' // Explicitly set role
@@ -69,7 +69,7 @@ const AdminRegister = () => {
           <div className="input-group">
             <User className="input-icon" size={20} />
             <input 
-              name="fullName"
+              name="username"
               type="text" 
               placeholder="Username" 
               onChange={handleChange}

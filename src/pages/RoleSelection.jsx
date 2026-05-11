@@ -18,12 +18,12 @@ const RoleSelection = () => {
         </div>
 
         <div className="role-options">
-          <button className="role-btn" onClick={() => navigate('/login?role=user')}>
+          <button className="role-btn" onClick={() => navigate('/login')}>
             <User size={24} />
             <span>Student User</span>
           </button>
 
-          <button className="role-btn" onClick={() => navigate('/login?role=admin')}>
+          <button className="role-btn" onClick={() => navigate('/admin-login')}>
             <ShieldCheck size={24} />
             <span>Administrator</span>
           </button>
