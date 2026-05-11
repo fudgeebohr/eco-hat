@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { User, Lock, Leaf, ArrowLeft } from 'lucide-react';
 import './Auth.css';
+import api from '../api';
 
 const Login = () => {
   const [studentNumber, setStudentNumber] = useState('');
@@ -11,12 +12,13 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const response = await axios.post('https://ecohat-node.onrender.com/api/auth/login-user', {
+      const response = await api.post('/api/auth/login-user', {
         studentNumber,
         password
       });

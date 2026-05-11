@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { User, Lock, BookOpen, GraduationCap, Leaf, ArrowLeft } from 'lucide-react';
 import './Auth.css';
+import api from '../api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -25,7 +26,7 @@ const Register = () => {
     if (formData.password !== formData.confirmPassword) return setError("Passwords do not match!");
     setLoading(true);
     try {
-      const response = await axios.post('https://ecohat-node.onrender.com/api/auth/register-user', {
+      const response = await api.post('/api/auth/register-user', {
         fullName: formData.fullName,
         studentNumber: formData.studentNumber,
         programAndYear: formData.programAndYear,

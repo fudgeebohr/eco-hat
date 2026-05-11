@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ShieldCheck, Lock, Key, User, ArrowLeft } from 'lucide-react';
 import './Auth.css';
+import api from '../api';
 
 const AdminRegister = () => {
   const [formData, setFormData] = useState({ username: '', password: '', adminKey: '' });
@@ -18,7 +19,7 @@ const AdminRegister = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('https://ecohat-node.onrender.com/api/auth/register-admin', formData);
+      const response = await api.post('/api/auth/register-admin', formData);
       if (response.status === 201) {
         alert("Admin Account Created!");
         navigate('/admin-login');
