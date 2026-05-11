@@ -24,6 +24,7 @@
 
 /* 2. CARD STYLING */
 .auth-card {
+  position: relative;
   background: var(--white);
   width: 100%;
   max-width: 420px;
@@ -183,4 +184,25 @@
   .auth-card {
     padding: 35px 20px;
   }
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.back-button:hover {
+  background-color: #f0f0f0;
+  color: var(--maroon);
 }
