@@ -42,7 +42,8 @@
 }
 
 .sidebar-header {
-  padding: 30px 20px;
+  /* Increased top padding from 30px to 45px */
+  padding: 45px 20px 30px; 
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -52,7 +53,7 @@
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px; /* Slightly increased gap for better visual flow */
   font-weight: 700;
   font-size: 1.2rem;
   color: var(--white);

@@ -1,24 +1,46 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Added for navigation
 import { 
   Menu, X, LayoutDashboard, Package, Users, BarChart3, 
-  Settings, LogOut, Search, Plus, Leaf 
+  Settings, LogOut, Search, Plus, Leaf, Image as ImageIcon, FileText 
 } from 'lucide-react';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [receipts, setReceipts] = useState([]);
+  const navigate = useNavigate(); // Initialize navigate
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
+  const handleLogout = () => {
+    // Perform any cleanup like clearing tokens here if necessary
+    navigate('/admin-login'); // Redirect to admin login page
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceipts([...receipts, { url: reader.result, name: file.name }]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="admin-wrapper">
-      {/* --- RETRACTABLE SIDEBAR --- */}
+      {/* --- SIDEBAR --- */}
       <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <Leaf color="#D4AF37" size={24} />
-          <span>ADMIN PANEL</span>
-          <X className="sidebar-close" onClick={toggleSidebar} />
+          <div className="sidebar-logo">
+            <Leaf color="#D4AF37" size={24} />
+            <span>ADMIN PANEL</span>
+          </div>
+          <X className="sidebar-close" onClick={toggleSidebar} size={24} />
         </div>
+        
         <nav className="sidebar-links">
           <div className="admin-menu-item active"><LayoutDashboard size={20}/> Overview</div>
           <div className="admin-menu-item"><Package size={20}/> Inventory</div>
@@ -26,83 +48,104 @@ const AdminDashboard = () => {
           <div className="admin-menu-item"><BarChart3 size={20}/> Analytics</div>
           <div className="admin-menu-item"><Settings size={20}/> Settings</div>
         </nav>
+
+        <div className="admin-logout-section">
+          <button className="admin-logout-btn" onClick={handleLogout}>
+            <LogOut size={20} /> Logout
+          </button>
+        </div>
       </aside>
 
       {/* --- OVERLAY --- */}
       {isSidebarOpen && <div className="admin-overlay" onClick={toggleSidebar}></div>}
 
-      {/* --- MAIN CONTENT --- */}
       <div className="admin-main">
-        {/* Top Navbar */}
+        {/* --- TOP NAV --- */}
         <header className="admin-top-nav">
-          <div className="nav-left">
-            <Menu className="admin-hamburger" onClick={toggleSidebar} />
-            <div className="admin-logo-text">
-               <Leaf size={20} /> <span>ECO-HAT ADMIN</span>
-            </div>
+          <Menu className="admin-hamburger" size={28} onClick={toggleSidebar} />
+          <div className="user-profile-nav">
+             <div className="avatar">A</div>
+             <span>ECO-HAT ADMIN</span>
           </div>
-          <button className="admin-logout-btn">Logout</button>
         </header>
 
-        {/* Dashboard Grid */}
         <div className="admin-content">
-          {/* Top 3 Stats */}
+          {/* Stats Row */}
           <div className="stats-row">
             <div className="stat-card">
-              <p>Bottles Collected Today</p>
+              <p className="label">Bottles Collected Today</p>
               <h1 className="stat-val maroon-text">70</h1>
             </div>
             <div className="stat-card">
-              <p>Weekly Performance</p>
+              <p className="label">Weekly Performance</p>
               <h1 className="stat-val maroon-text">239</h1>
             </div>
             <div className="stat-card">
-              <p>Total Monthly Intake</p>
+              <p className="label">Total Monthly Intake</p>
               <h1 className="stat-val maroon-text">239</h1>
             </div>
           </div>
 
+          {/* Balanced Middle Grid */}
           <div className="middle-grid">
-            {/* Inventory Stock */}
-            <div className="admin-card inventory-card">
-              <div className="card-top">
-                <h3>📦 Inventory Stock</h3>
-                <span className="edit-link">Edit Stock</span>
+            <div className="admin-card">
+              <div className="card-header-flex">
+                <h3 className="header-title"><Package size={18}/> Inventory Stock</h3>
               </div>
-              <ul className="stock-list">
-                <li><span>Notebook</span> <b className="maroon-text">95</b></li>
-                <li><span>Ballpen</span> <b className="maroon-text">98</b></li>
-                <li><span>Pencil</span> <b className="maroon-text">89</b></li>
-                <li><span>Scissors</span> <b className="maroon-text">55</b></li>
+              <ul style={{listStyle: 'none', marginTop: '15px'}}>
+                <li style={{display:'flex', justifyContent:'space-between', padding:'8px 0'}}>
+                  <span>Notebook</span> <b className="maroon-text">95</b>
+                </li>
+                <li style={{display:'flex', justifyContent:'space-between', padding:'8px 0'}}>
+                  <span>Ballpen</span> <b className="maroon-text">98</b>
+                </li>
+                <li style={{display:'flex', justifyContent:'space-between', padding:'8px 0'}}>
+                  <span>Pencil</span> <b className="maroon-text">89</b>
+                </li>
               </ul>
             </div>
 
-            {/* Leaderboard Section */}
-            <div className="admin-card leaderboard-section">
-              <div className="card-top">
-                <h3>🏆 Sustainability Leaderboard</h3>
+            <div className="admin-card">
+              <div className="card-header-flex">
+                <h3 className="header-title"><Users size={18}/> Sustainability Leaderboard</h3>
               </div>
-              <div className="search-bar-container">
-                <Search size={16} className="search-icon" />
-                <input type="text" placeholder="Search name or ID..." />
-              </div>
-              <div className="empty-state">
-                <img src="/api/placeholder/64/64" alt="No data" />
+              <div className="empty-activity">
                 <p>No Student Data Found</p>
               </div>
             </div>
           </div>
 
-          {/* Sales Transparency System */}
-          <div className="admin-card sales-card">
-            <div className="card-top">
-              <h3>💰 Full Sales Transparency System</h3>
-              <div className="total-sales">Total Verified Sales: <b>₱750.00</b></div>
+          {/* Transparency Report */}
+          <div className="admin-card">
+            <div className="card-header-flex">
+              <h3 className="header-title"><FileText size={18}/> Transparency Report</h3>
+              <span className="subtitle">Verified Transactions & Receipts</span>
             </div>
-            <div className="transaction-form">
-               <input type="number" placeholder="Amount (₱)" />
-               <input type="text" placeholder="Description" />
-               <button className="log-btn"><Plus size={18}/> Log Transaction</button>
+            
+            <div className="receipt-upload-section">
+              <div className="transaction-form">
+                <input type="number" placeholder="Amount (₱)" />
+                <input type="text" placeholder="Transaction Description" />
+                <label className="upload-label">
+                  <ImageIcon size={18}/> Add Receipt
+                  <input type="file" hidden onChange={handleFileChange} accept="image/*" />
+                </label>
+                <button className="log-btn log-btn-primary"><Plus size={18}/> Log Entry</button>
+              </div>
+
+              <h4 className="label" style={{marginTop: '30px'}}>Recent Receipt Gallery</h4>
+              <div className="receipt-preview-list">
+                {receipts.length === 0 ? (
+                  <p className="empty-activity" style={{gridColumn: '1/-1'}}>No receipts uploaded yet.</p>
+                ) : (
+                  receipts.map((img, i) => (
+                    <div key={i} className="receipt-item">
+                      <img src={img.url} alt="receipt" />
+                      <p title={img.name}>{img.name}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
