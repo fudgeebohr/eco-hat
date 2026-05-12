@@ -1,0 +1,146 @@
+/* src/pages/Profile.css */
+.profile-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* --- HEADER CARD --- */
+.profile-header-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border-left: 6px solid var(--gold);
+}
+
+.profile-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.profile-avatar-large {
+  width: 90px;
+  height: 90px;
+  background: var(--maroon);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+  border: 4px solid #f0f0f0;
+}
+
+.profile-main-info h2 {
+  color: var(--maroon);
+  margin-bottom: 5px;
+}
+
+.profile-main-info p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff8e1;
+  color: #fbc02d;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 10px;
+  border: 1px solid #ffe082;
+}
+
+.edit-profile-btn {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.2s;
+}
+
+.edit-profile-btn:hover {
+  background: #eee;
+}
+
+/* --- GRID & DETAILS --- */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+
+.detail-item {
+  margin-bottom: 15px;
+}
+
+.detail-item p {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-top: 2px;
+}
+
+.stats-mini-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+}
+
+.stat-box {
+  background: #fffafa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #ffebee;
+}
+
+/* --- SETTINGS --- */
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #f4f4f4;
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-name {
+  font-weight: 600;
+  color: var(--maroon);
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+  .profile-header-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  .profile-avatar-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}

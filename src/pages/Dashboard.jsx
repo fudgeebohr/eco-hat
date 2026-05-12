@@ -13,13 +13,14 @@ import {
 } from 'lucide-react';
 import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
+import Profile from './Profile'; 
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [studentName, setStudentName] = useState("Student");
   const navigate = useNavigate();
 
-  // Load student name from localStorage (set during login)
   useEffect(() => {
     const name = localStorage.getItem('studentName');
     if (name) setStudentName(name);
@@ -30,10 +31,76 @@ const Dashboard = () => {
   const handleLogout = () => {
     navigate('/login');
   };
+  
+const renderContent = () => {
+    switch (activeTab) {
+      case 'profile':
+        return <Profile />;
+      case 'rewards':
+        return <div className="empty-activity"><p>Rewards feature coming soon!</p></div>;
+      default:
+        return (
+          <div className="dashboard-grid-container">
+            {/* Balance Card - Cleaned Version */}
+            <div className="card balance-card full-width">
+              <div className="balance-info">
+                <p className="label">Your Current Balance</p>
+                <h1 className="points-display">750</h1>
+                <p className="points-label">Total Eco-Points</p> {/* Simplified label */}
+              </div>
+              <button className="redeem-btn">
+                Redeem Points <ChevronRight size={18} />
+              </button>
+            </div>
+
+            {/* Split row for Leaderboard and Activity */}
+            <div className="dashboard-split-row">
+              <div className="card leaderboard-card">
+                <div className="card-header-flex">
+                  <div className="header-title">
+                    <Trophy size={18} color="#800000" />
+                    <h3>Sustainability Leaderboard</h3>
+                  </div>
+                </div>
+                <div className="table-responsive">
+                  <table className="eco-table">
+                    <thead>
+                      <tr>
+                        <th>RANK</th>
+                        <th>STUDENT</th>
+                        <th>POINTS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="current-user-row">
+                        <td>1</td>
+                        <td>{studentName}</td>
+                        <td>99</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="card activity-card">
+                <div className="card-header-flex">
+                  <div className="header-title">
+                    <History size={18} color="#800000" />
+                    <h3>Recent Activity</h3>
+                  </div>
+                </div>
+                <div className="empty-activity">
+                   <p>No recent recycling activity found.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="dashboard-wrapper">
-      {/* --- SIDEBAR PANEL --- */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
@@ -44,96 +111,46 @@ const Dashboard = () => {
         </div>
         
         <nav className="sidebar-menu">
-          <div className="menu-item active">
-            <LayoutDashboard size={20} /> 
-            <span>Dashboard</span>
+          <div 
+            className={`menu-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
+          >
+            <LayoutDashboard size={20}/> Dashboard
           </div>
-          <div className="menu-item">
-            <User size={20} /> 
-            <span>My Profile</span>
+          <div 
+            className={`menu-item ${activeTab === 'profile' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('profile'); setIsSidebarOpen(false); }}
+          >
+            <User size={20}/> Profile
           </div>
-          <div className="menu-item">
-            <Gift size={20} /> 
-            <span>Rewards</span>
+          <div 
+            className={`menu-item ${activeTab === 'rewards' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('rewards'); setIsSidebarOpen(false); }}
+          >
+            <Gift size={20}/> Rewards
           </div>
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="menu-item logout" onClick={handleLogout}>
-            <LogOut size={20} /> 
-            <span>Logout</span>
+        <div className="logout" onClick={handleLogout} style={{cursor: 'pointer'}}>
+          <div className="menu-item">
+            <LogOut size={20} /> Logout
           </div>
         </div>
       </aside>
 
-      {/* --- OVERLAY (Mobile) --- */}
       {isSidebarOpen && <div className="overlay" onClick={toggleSidebar}></div>}
 
-      {/* --- MAIN CONTENT AREA --- */}
       <main className="main-content">
         <header className="top-nav">
-          <Menu className="hamburger-icon" onClick={toggleSidebar} size={30} />
-          <div className="user-profile-nav">
-            <span>{studentName}</span>
-            <div className="avatar">JS</div>
+          <Menu className="hamburger-icon" size={28} onClick={toggleSidebar} />
+          <div className="user-profile-nav" onClick={() => setActiveTab('profile')} style={{cursor: 'pointer'}}>
+             <div className="avatar">{studentName.charAt(0).toUpperCase()}</div>
+             <span>{studentName.toUpperCase()}</span>
           </div>
         </header>
 
-        <div className="content-container">
-          {/* Container 1: Current Balance */}
-          <div className="card balance-card">
-            <div className="balance-info">
-              <p className="label">Current Balance</p>
-              <h2 className="points-display">99</h2>
-            </div>
-            <button className="redeem-btn">Redeem Supplies</button>
-          </div>
-
-          {/* Container 2: Leaderboard */}
-          <div className="card table-card">
-            <div className="card-header-flex">
-              <div className="header-title">
-                <Trophy size={18} color="#800000" />
-                <h3>Sustainability Leaderboard</h3>
-              </div>
-              <span className="subtitle">Top 10 Eco Warriors</span>
-            </div>
-            
-            <div className="table-responsive">
-              <table className="eco-table">
-                <thead>
-                  <tr>
-                    <th>RANK</th>
-                    <th>STUDENT</th>
-                    <th>BOTTLES</th>
-                    <th>POINTS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="current-user-row">
-                    <td>1</td>
-                    <td>{studentName}</td>
-                    <td>45</td>
-                    <td>99</td>
-                  </tr>
-                  {/* Additional rows would be mapped here */}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Container 3: Recent Activity */}
-          <div className="card activity-card">
-            <div className="card-header-flex">
-              <div className="header-title">
-                <History size={18} color="#800000" />
-                <h3>Recent Activity</h3>
-              </div>
-            </div>
-            <div className="empty-activity">
-               <p>No recent recycling activity found.</p>
-            </div>
-          </div>
+        <div className="content-transition-wrapper">
+          {renderContent()}
         </div>
       </main>
     </div>
