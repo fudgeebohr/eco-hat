@@ -26,8 +26,7 @@ const Dashboard = () => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   return (
