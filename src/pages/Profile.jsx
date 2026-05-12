@@ -9,11 +9,11 @@ const Profile = () => {
   const userData = {
     name: "JADE ANDRIE L. DAHAN",
     section: "BSCpE 4-1",
-    email: "jade.dahan@example.com",
+    studentNumber: "2022-00211-BN-0",
     rank: "Platinum Collector",
     totalBottles: 245,
     points: 750,
-  };
+  };``
 
   return (
     <div className="profile-container">
@@ -48,8 +48,8 @@ const Profile = () => {
               <p>{userData.section}</p>
             </div>
             <div className="detail-item">
-              <span className="label">Email Address</span>
-              <p>{userData.email}</p>
+              <span className="label">Student Number</span>
+              <p>{userData.studentNumber}</p>
             </div>
           </div>
         </div>

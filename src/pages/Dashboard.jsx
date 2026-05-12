@@ -1,23 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Menu, 
-  X, 
-  LayoutDashboard, 
-  User, 
-  Gift, 
-  LogOut, 
-  Trophy, 
-  History, 
-  Leaf,
-  ChevronRight
+  Menu, X, LayoutDashboard, User, Gift, LogOut, 
+  Trophy, History, Leaf, ChevronRight
 } from 'lucide-react';
-import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
 import Profile from './Profile'; 
+import Rewards from './Rewards'; //
+import './Dashboard.css';
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard'); //
   const [studentName, setStudentName] = useState("Student");
   const navigate = useNavigate();
 
@@ -27,32 +20,31 @@ const Dashboard = () => {
   }, []);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const handleLogout = () => navigate('/login');
 
-  const handleLogout = () => {
-    navigate('/login');
-  };
-
-const renderContent = () => {
+  const renderContent = () => {
     switch (activeTab) {
       case 'profile':
         return <Profile />;
       case 'rewards':
-        return <div className="empty-activity"><p>Rewards feature coming soon!</p></div>;
+        return <Rewards userPoints={750} />; //
       default:
         return (
           <div className="dashboard-grid-container">
-            {/* Balance Card - Cleaned Version */}
             <div className="card balance-card full-width">
               <div className="balance-info">
                 <p className="label">Your Current Balance</p>
-                <h1 className="points-display">750</h1> {/* Simplified label */}
+                <h1 className="points-display">750</h1>
               </div>
-              <button className="redeem-btn">
+              {/* Functional Navigation Button */}
+              <button 
+                className="redeem-btn" 
+                onClick={() => setActiveTab('rewards')}
+              >
                 Redeem Points <ChevronRight size={18} />
               </button>
             </div>
 
-            {/* Split row for Leaderboard and Activity */}
             <div className="dashboard-split-row">
               <div className="card leaderboard-card">
                 <div className="card-header-flex">
