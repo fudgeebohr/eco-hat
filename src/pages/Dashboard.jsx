@@ -31,7 +31,7 @@ const Dashboard = () => {
   const handleLogout = () => {
     navigate('/login');
   };
-  
+
 const renderContent = () => {
     switch (activeTab) {
       case 'profile':
@@ -45,8 +45,7 @@ const renderContent = () => {
             <div className="card balance-card full-width">
               <div className="balance-info">
                 <p className="label">Your Current Balance</p>
-                <h1 className="points-display">750</h1>
-                <p className="points-label">Total Eco-Points</p> {/* Simplified label */}
+                <h1 className="points-display">750</h1> {/* Simplified label */}
               </div>
               <button className="redeem-btn">
                 Redeem Points <ChevronRight size={18} />

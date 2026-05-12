@@ -104,17 +104,14 @@ const AdminDashboard = () => {
               <div className="stat-card">
                 <p className="label">Bottles Collected Today</p>
                 <h1 className="stat-val maroon-text">70</h1>
-                <p className="points-label">Daily Intake</p>
               </div>
               <div className="stat-card">
                 <p className="label">Weekly Performance</p>
                 <h1 className="stat-val maroon-text">239</h1>
-                <p className="points-label">Active Users</p>
               </div>
               <div className="stat-card">
                 <p className="label">Total Monthly Intake</p>
                 <h1 className="stat-val maroon-text">1,402</h1>
-                <p className="points-label">System Health</p>
               </div>
             </div>
 
