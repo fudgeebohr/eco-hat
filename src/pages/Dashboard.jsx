@@ -12,10 +12,12 @@ import {
   ChevronRight
 } from 'lucide-react';
 import './Dashboard.css';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [studentName, setStudentName] = useState("Student");
+  const navigate = useNavigate();
 
   // Load student name from localStorage (set during login)
   useEffect(() => {
@@ -26,8 +28,7 @@ const Dashboard = () => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   return (
