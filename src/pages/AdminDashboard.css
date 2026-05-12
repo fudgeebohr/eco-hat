@@ -198,3 +198,73 @@
   .admin-main { padding: 15px; }
   .stat-val { font-size: 2rem; }
 }
+
+/* --- ADMIN GRID SYSTEM --- */
+.content-transition-wrapper {
+  max-width: 1000px; /* Aligned with User/Profile Dashboard */
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.admin-content-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-split-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Equal split for inventory and leaderboard */
+  gap: 20px;
+}
+
+/* Points label style from User Dashboard */
+.points-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gold);
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stock-list {
+  list-style: none;
+  margin-top: 15px;
+}
+
+.stock-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f9f9f9;
+  font-size: 0.95rem;
+}
+
+/* Ensure scanner doesn't stretch */
+.scanner-container {
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Responsive Grid */
+@media (max-width: 900px) {
+  .dashboard-split-row {
+    grid-template-columns: 1fr; /* Stack columns on tablet/mobile */
+  }
+  
+  .stats-row {
+    grid-template-columns: 1fr; /* Stack stats on mobile */
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-main {
+    padding: 15px;
+  }
+  
+  .transaction-form {
+    grid-template-columns: 1fr;
+  }
+}
