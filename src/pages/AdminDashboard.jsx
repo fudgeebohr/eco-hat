@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added for navigation
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import { 
   Menu, X, LayoutDashboard, Package, Users, BarChart3, 
-  Settings, LogOut, Search, Plus, Leaf, Image as ImageIcon, FileText 
+  Settings, LogOut, Search, Plus, Leaf, Image as ImageIcon, FileText, QrCode, Check, Ban 
 } from 'lucide-react';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [receipts, setReceipts] = useState([]);
-  const navigate = useNavigate(); // Initialize navigate
+  const [scanStatus, setScanStatus] = useState('idle'); // idle, scanning, detected
+  const [scannedData, setScannedData] = useState(null);
+  const navigate = useNavigate();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleLogout = () => {
-    // Perform any cleanup like clearing tokens here if necessary
-    navigate('/admin-login'); // Redirect to admin login page
+    navigate('/admin-login');
   };
 
   const handleFileChange = (e) => {
@@ -29,9 +31,41 @@ const AdminDashboard = () => {
     }
   };
 
+  useEffect(() => {
+    let scanner = null;
+    if (scanStatus === 'scanning') {
+      // Configuration for the QR Scanner
+      scanner = new Html5QrcodeScanner("reader", { 
+        fps: 10, 
+        qrbox: { width: 180, height: 180 },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [0, 1] // 0 = Camera, 1 = File
+      });
+
+      scanner.render((decodedText) => {
+        setScannedData(decodedText);
+        setScanStatus('detected');
+        scanner.clear(); 
+      }, (error) => {
+        // Errors are ignored during frame scanning to avoid console spam
+      });
+    }
+
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(err => console.error("Failed to clear scanner", err));
+      }
+    };
+  }, [scanStatus]);
+
+  const handleRedemption = (status) => {
+    alert(`Redemption for ${scannedData} ${status === 'approve' ? 'Approved' : 'Rejected'}`);
+    setScanStatus('idle');
+    setScannedData(null);
+  };
+
   return (
     <div className="admin-wrapper">
-      {/* --- SIDEBAR --- */}
       <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
@@ -56,13 +90,13 @@ const AdminDashboard = () => {
         </div>
       </aside>
 
-      {/* --- OVERLAY --- */}
       {isSidebarOpen && <div className="admin-overlay" onClick={toggleSidebar}></div>}
 
       <div className="admin-main">
-        {/* --- TOP NAV --- */}
         <header className="admin-top-nav">
-          <Menu className="admin-hamburger" size={28} onClick={toggleSidebar} />
+          <div className="nav-left">
+            <Menu className="admin-hamburger" size={28} onClick={toggleSidebar} />
+          </div>
           <div className="user-profile-nav">
              <div className="avatar">A</div>
              <span>ECO-HAT ADMIN</span>
@@ -70,23 +104,21 @@ const AdminDashboard = () => {
         </header>
 
         <div className="admin-content">
-          {/* Stats Row */}
           <div className="stats-row">
             <div className="stat-card">
               <p className="label">Bottles Collected Today</p>
-              <h1 className="stat-val maroon-text">70</h1>
+              <h1 className="stat-val maroon-text" style={{color: 'var(--maroon)'}}>70</h1>
             </div>
             <div className="stat-card">
               <p className="label">Weekly Performance</p>
-              <h1 className="stat-val maroon-text">239</h1>
+              <h1 className="stat-val maroon-text" style={{color: 'var(--maroon)'}}>239</h1>
             </div>
             <div className="stat-card">
               <p className="label">Total Monthly Intake</p>
-              <h1 className="stat-val maroon-text">239</h1>
+              <h1 className="stat-val maroon-text" style={{color: 'var(--maroon)'}}>239</h1>
             </div>
           </div>
 
-          {/* Balanced Middle Grid */}
           <div className="middle-grid">
             <div className="admin-card">
               <div className="card-header-flex">
@@ -115,7 +147,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Transparency Report */}
           <div className="admin-card">
             <div className="card-header-flex">
               <h3 className="header-title"><FileText size={18}/> Transparency Report</h3>
@@ -126,8 +157,9 @@ const AdminDashboard = () => {
               <div className="transaction-form">
                 <input type="number" placeholder="Amount (₱)" />
                 <input type="text" placeholder="Transaction Description" />
-                <label className="upload-label">
-                  <ImageIcon size={18}/> Add Receipt
+                <label className="upload-label" style={{cursor: 'pointer'}}>
+                  <ImageIcon size={18}/> 
+                  Add Receipt
                   <input type="file" hidden onChange={handleFileChange} accept="image/*" />
                 </label>
                 <button className="log-btn log-btn-primary"><Plus size={18}/> Log Entry</button>
@@ -146,6 +178,44 @@ const AdminDashboard = () => {
                   ))
                 )}
               </div>
+            </div>
+          </div>
+
+          <div className="admin-card standalone-card" style={{marginTop: '20px'}}>
+            <div className="card-header-flex">
+              <h3 className="header-title"><QrCode size={18}/> Redemption Scanner</h3>
+              <span className="subtitle">Verify School Supplies Claims</span>
+            </div>
+
+            <div className="scanner-container">
+              {scanStatus === 'idle' && (
+                <div className="scanner-placeholder" onClick={() => setScanStatus('scanning')}>
+                  <QrCode size={48} color="var(--gold)" />
+                  <p>TAP TO START SCANNER</p>
+                </div>
+              )}
+
+              {scanStatus === 'scanning' && (
+                <div id="reader" style={{ width: '100%' }}></div>
+              )}
+
+              {scanStatus === 'detected' && (
+                <div className="scan-result-card">
+                  <div className="student-info" style={{ borderLeft: '4px solid var(--maroon)', paddingLeft: '15px' }}>
+                    <h4 className="maroon-text" style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Verification Successful</h4>
+                    <p style={{ color: '#555', marginBottom: '4px' }}>Claim ID: <strong style={{ color: 'var(--text-dark)' }}>{scannedData}</strong></p>
+                    <p className="label" style={{ color: 'var(--gold)', fontWeight: 'bold' }}>STATUS: READY FOR REDEMPTION</p>
+                  </div>
+                  <div className="action-row" style={{ marginTop: '25px' }}>
+                    <button className="action-btn approve" onClick={() => handleRedemption('approve')}>
+                      <Check size={18} /> Approve Release
+                    </button>
+                    <button className="action-btn reject" onClick={() => handleRedemption('reject')}>
+                      <Ban size={18} /> Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
