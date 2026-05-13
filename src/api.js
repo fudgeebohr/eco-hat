@@ -1,19 +1,21 @@
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+  baseURL: API_BASE_URL
 });
 
-export const getUserData = async (studentId) => {
-    const response = await fetch(`${API_URL}/user-history/${studentId}`);
-    if (!response.ok) throw new Error('Failed to fetch user data');
-    return response.json(); // This usually returns { points, activities: [] }
-};
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-export const getLeaderboard = async () => {
-    const response = await fetch(`${API_URL}/leaderboard`);
-    if (!response.ok) throw new Error('Failed to fetch leaderboard');
-    return response.json();
-};
+export const getUserData = (studentNumber) => api.get(`/user-history/${studentNumber}`);
+export const getProfile = (studentNumber) => api.get(`/profile?studentNumber=${studentNumber}`);
+export const getLeaderboard = () => api.get('/leaderboard');
 
 export default api;

@@ -7,16 +7,40 @@ import { useNavigate } from 'react-router-dom';
 import Profile from './Profile'; 
 import Rewards from './Rewards'; //
 import './Dashboard.css';
+import api, { getProfile, getLeaderboard } from '../api'; // Adjust path
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard'); //
-  const [studentName, setStudentName] = useState("Student");
+  const [studentName, setStudentName] = useState(''); // For displaying in nav
+  const [userData, setUserData] = useState(null); // Real user data from DB
+  const [leaderboard, setLeaderboard] = useState([]); // Top 10 users from DB
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const name = localStorage.getItem('studentName');
     if (name) setStudentName(name);
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const studentNumber = 'YOUR_STUDENT_NUMBER'; // From login
+        
+        const [profile, leaderboard] = await Promise.all([
+          api.get('/profile'), // Now works!
+          api.get('/leaderboard') // Now works!
+        ]);
+        
+        setUserData(profile.data);
+        setLeaderboard(leaderboard.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchData();
   }, []);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -25,16 +49,16 @@ const Dashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'profile':
-        return <Profile />;
+        return <Profile userData={userData} />;
       case 'rewards':
-        return <Rewards userPoints={750} />; //
+        return <Rewards userPoints={userData?.points || 0} />;
       default:
         return (
           <div className="dashboard-grid-container">
             <div className="card balance-card full-width">
               <div className="balance-info">
                 <p className="label">Your Current Balance</p>
-                <h1 className="points-display">750</h1>
+                <h1 className="points-display">{userData?.points || 0}</h1>
               </div>
               {/* Functional Navigation Button */}
               <button 
@@ -53,23 +77,16 @@ const Dashboard = () => {
                     <h3>Sustainability Leaderboard</h3>
                   </div>
                 </div>
-                <div className="table-responsive">
-                  <table className="eco-table">
-                    <thead>
-                      <tr>
-                        <th>RANK</th>
-                        <th>STUDENT</th>
-                        <th>POINTS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="current-user-row">
-                        <td>1</td>
-                        <td>{studentName}</td>
-                        <td>99</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="leaderboard-list">
+                  {leaderboard.map((user, index) => (
+                    <div key={user._id} className="leader-item">
+                      <div className="rank">#{index + 1}</div>
+                      <div className="leader-info">
+                        <p className="name">{user.fullName}</p>
+                        <p className="pts">{user.points} pts</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -80,9 +97,26 @@ const Dashboard = () => {
                     <h3>Recent Activity</h3>
                   </div>
                 </div>
-                <div className="empty-activity">
-                   <p>No recent recycling activity found.</p>
-                </div>
+                <table className="eco-table">
+                  <thead>
+                    <tr>
+                      <th>Action</th>
+                      <th>Points</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(userData?.history || []).slice(0, 5).map((act, i) => (
+                      <tr key={i}>
+                        <td>{act.type === 'deposit' ? 'Bottle Collection' : 'Reward Redeemed'}</td>
+                        <td className={act.type === 'deposit' ? 'points-plus' : 'points-minus'}>
+                          {act.type === 'deposit' ? '+' : '-'}{act.points}
+                        </td>
+                        <td>{new Date(act.date).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
