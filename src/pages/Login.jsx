@@ -18,7 +18,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const response = await api.post('/api/auth/login-user', {
+      const response = await api.post('/login-user', {
         studentNumber,
         password
       });

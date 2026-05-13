@@ -26,7 +26,7 @@ const Register = () => {
     if (formData.password !== formData.confirmPassword) return setError("Passwords do not match!");
     setLoading(true);
     try {
-      const response = await api.post('/api/auth/register-user', {
+      const response = await api.post('/register-user', {
         fullName: formData.fullName,
         studentNumber: formData.studentNumber,
         programAndYear: formData.programAndYear,

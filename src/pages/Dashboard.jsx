@@ -24,23 +24,30 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const studentNumber = 'YOUR_STUDENT_NUMBER'; // From login
+        setLoading(true);
         
-        const [profile, leaderboard] = await Promise.all([
-          api.get('/profile'), // Now works!
-          api.get('/leaderboard') // Now works!
+        const [profileRes, leaderboardRes] = await Promise.all([
+          api.get('/profile'),      // → /api/auth/profile ✅
+          api.get('/leaderboard')   // → /api/auth/leaderboard ✅
         ]);
+
+        console.log('Profile:', profileRes.data);
+        console.log('Leaderboard:', leaderboardRes.data);
         
-        setUserData(profile.data);
-        setLeaderboard(leaderboard.data);
-      } catch (err) {
-        console.error(err);
+        setUserData(profileRes.data);
+        setLeaderboard(leaderboardRes.data);
+      } catch (error) {
+        console.error('Dashboard Error:', error.response?.data || error.message);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchData();
+
+    if (localStorage.getItem('token')) {  
+      fetchDashboardData();
+    }
   }, []);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);

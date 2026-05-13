@@ -19,7 +19,7 @@ const AdminRegister = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await api.post('/api/auth/register-admin', formData);
+      const response = await api.post('/register-admin', formData);
       if (response.status === 201) {
         alert("Admin Account Created!");
         navigate('/admin-login');
