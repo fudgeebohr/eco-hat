@@ -99,7 +99,7 @@ const Dashboard = () => {
                           <td className="rank-col">#{index + 1}</td>
                           {/* Update user.firstName/lastName to match what your API returns (e.g. user.name) */}
                           <td className="name-col">{user.fullName}</td>
-                          <td className="points-col">{user.points}</td>
+                          <td className="points-col">{user.totalPointsEarned}</td>
                         </tr>
                       ))
                     ) : (
