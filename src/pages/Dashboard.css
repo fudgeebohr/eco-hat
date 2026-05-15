@@ -280,3 +280,70 @@
   }
 }
 
+/* --- LEADERBOARD --- */
+.leaderboard-container {
+  background: var(--white, #ffffff);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+  overflow-x: auto; /* Handles responsiveness on small screens */
+}
+
+.leaderboard-title {
+  color: var(--maroon, #800000);
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  border-bottom: 2px solid var(--gold, #D4AF37);
+  padding-bottom: 8px;
+  display: inline-block;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table th {
+  text-align: left;
+  font-size: 0.85rem;
+  color: #888;
+  padding: 12px 10px;
+  text-transform: uppercase;
+  border-bottom: 2px solid #eee;
+}
+
+.leaderboard-table td {
+  padding: 14px 10px;
+  border-bottom: 1px solid #f9f9f9;
+  font-size: 0.95rem;
+  color: var(--text-dark, #333333);
+}
+
+.leaderboard-table tbody tr:hover {
+  background-color: #fdfdfd;
+}
+
+/* Explicit Column Widths to match your requested spacing */
+.rank-col {
+  width: 20%;
+  font-weight: bold;
+  color: var(--maroon, #800000);
+}
+
+.name-col {
+  width: 60%;
+}
+
+.points-col {
+  width: 20%;
+  font-weight: bold;
+  color: var(--gold, #D4AF37);
+}
+
+.no-data {
+  text-align: center !important;
+  color: #888;
+  font-style: italic;
+  padding: 20px !important;
+}

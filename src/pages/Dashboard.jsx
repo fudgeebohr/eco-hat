@@ -84,17 +84,31 @@ const Dashboard = () => {
                     <h3>Sustainability Leaderboard</h3>
                   </div>
                 </div>
-                <div className="leaderboard-list">
-                  {leaderboard.map((user, index) => (
-                    <div key={user._id} className="leader-item">
-                      <div className="rank">#{index + 1}</div>
-                      <div className="leader-info">
-                        <p className="name">{user.fullName}</p>
-                        <p className="pts">{user.points} pts</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <table className="leaderboard-table">
+                  <thead>
+                    <tr>
+                      <th className="rank-col">Rank</th>
+                      <th className="name-col">Name</th>
+                      <th className="points-col">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard && leaderboard.length > 0 ? (
+                      leaderboard.map((user, index) => (
+                        <tr key={user._id || index}>
+                          <td className="rank-col">#{index + 1}</td>
+                          {/* Update user.firstName/lastName to match what your API returns (e.g. user.name) */}
+                          <td className="name-col">{user.fullName}</td>
+                          <td className="points-col">{user.points}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="3" className="no-data">No data available</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
 
               <div className="card activity-card">
