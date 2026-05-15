@@ -347,3 +347,85 @@
   font-style: italic;
   padding: 20px !important;
 }
+
+/* --- RECENT ACTIVITY --- */
+.activity-container {
+  background: var(--white, #ffffff);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.activity-title {
+  color: var(--maroon, #800000);
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  border-bottom: 2px solid var(--gold, #D4AF37);
+  padding-bottom: 8px;
+  display: inline-block;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Table Headers */
+.activity-table th {
+  text-align: left;
+  font-size: 0.85rem;
+  color: #888;
+  padding: 12px 10px;
+  text-transform: uppercase;
+  border-bottom: 2px solid #eee;
+}
+
+/* Main Row Styling */
+.activity-main-row td {
+  padding: 14px 10px 4px 10px; /* Small bottom padding to pull description closer */
+  font-size: 0.95rem;
+  color: var(--text-dark, #333333);
+  font-weight: 500;
+}
+
+/* Description Row Styling */
+.activity-desc-row td {
+  padding: 0px 10px 14px 10px; /* Normal bottom padding, 0 top padding */
+  border-bottom: 1px solid #f9f9f9;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Hover effect targets both rows by grouping them logically */
+tbody:hover .activity-main-row:hover,
+tbody:hover .activity-main-row:hover + .activity-desc-row {
+  background-color: #fdfdfd;
+}
+
+/* Column Alignments & Widths */
+.activity-table th.action-col,
+.activity-table td.action-col {
+  width: 50%;
+}
+
+.activity-table th.points-col,
+.activity-table td.points-col {
+  width: 25%;
+  font-weight: bold;
+}
+
+.activity-table th.date-col,
+.activity-table td.date-col {
+  width: 25%;
+}
+
+/* Dynamic Colors */
+.text-green {
+  color: #16a34a; /* A solid, readable green */
+}
+
+.text-red {
+  color: #dc2626; /* A solid, readable red */
+}

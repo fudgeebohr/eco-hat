@@ -118,24 +118,49 @@ const Dashboard = () => {
                     <h3>Recent Activity</h3>
                   </div>
                 </div>
-                <table className="eco-table">
+                <table className="activity-table">
                   <thead>
                     <tr>
-                      <th>Action</th>
-                      <th>Points</th>
-                      <th>Date</th>
+                      <th className="action-col">Action</th>
+                      <th className="points-col">Points</th>
+                      <th className="date-col">Date</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(userData?.history || []).slice(0, 5).map((act, i) => (
-                      <tr key={i}>
-                        <td>{act.type === 'deposit' ? 'Bottle Collection' : 'Reward Redeemed'}</td>
-                        <td className={act.type === 'deposit' ? 'points-plus' : 'points-minus'}>
-                          {act.type === 'deposit' ? '+' : '-'}{act.points}
-                        </td>
-                        <td>{new Date(act.date).toLocaleDateString()}</td>
+                    {userData?.history && userData.history.length > 0 ? (
+                      userData.history.map((item, index) => {
+                        // Determine if this is a positive or negative action
+                        // You can also check by string: item.action === 'Bottle Collection'
+                        const isPositive = item.points > 0; 
+                        const colorClass = isPositive ? 'text-green' : 'text-red';
+                        const actionText = isPositive ? "Bottle Collection" : "Rewards Redemption";
+
+                        return (
+                          <React.Fragment key={item._id || index}>
+                            {/* Main Row: Action, Points, Date */}
+                            <tr className="activity-main-row">
+                              <td className="action-col">{actionText}</td>
+                              <td className={`points-col ${colorClass}`}>
+                                {item.points > 0 ? `+${item.points}` : item.points}
+                              </td>
+                              <td className="date-col">
+                                {new Date(item.date).toLocaleDateString()}
+                              </td>
+                            </tr>
+                            {/* Sub Row: Description */}
+                            <tr className="activity-desc-row">
+                              <td colSpan="3" className={`desc-col ${colorClass}`}>
+                                {item.description}
+                              </td>
+                            </tr>
+                          </React.Fragment>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="3" className="no-data">No recent activity</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
