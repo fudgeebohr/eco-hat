@@ -215,7 +215,7 @@ const Dashboard = () => {
         <header className="top-nav">
           <Menu className="hamburger-icon" size={28} onClick={toggleSidebar} />
           <div className="user-profile-nav" onClick={() => setActiveTab('profile')} style={{cursor: 'pointer'}}>
-             <div className="avatar">{studentName.charAt(0).toUpperCase()}</div>
+             <div className="avatar"><User size={24} /></div>
              <span>{studentName.toUpperCase()}</span>
           </div>
         </header>
