@@ -15,6 +15,7 @@ const Profile = ({ onProfileUpdate }) => {
     rank: "Loading...",
     totalPointsEarned: 0,
     points: 0,
+    privacyMode: false,
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,9 +38,10 @@ const Profile = ({ onProfileUpdate }) => {
             fullName: response.data.fullName || "N/A", 
             programAndYear: response.data.programAndYear || "N/A",
             studentNumber: response.data.studentNumber || "N/A",
-            rank: response.data.rank || "Beginner",
+            rank: response.data.rank,
             totalPointsEarned: response.data.totalPointsEarned || 0,
             points: response.data.points || 0,
+            privacyMode: response.data.privacyMode || false,
           });
         }
       } catch (error) {
@@ -108,6 +110,27 @@ const Profile = ({ onProfileUpdate }) => {
     } catch (error) {
       console.error("Failed to update profile:", error);
       alert("Failed to update profile. Please try again.");
+    }
+  };
+
+  const handlePrivacyToggle = async (e) => {
+  const isChecked = e.target.checked;
+    try {
+      // Send the updated privacy mode directly to the backend
+      await api.put('/profile', { privacyMode: isChecked });
+      
+      // Update local state instantly
+      setUserData(prev => ({
+        ...prev,
+        privacyMode: isChecked
+      }));
+      
+      alert(isChecked ? "Privacy Mode activated. You are now hidden from the leaderboard!" : "Privacy Mode deactivated. You are now visible on the leaderboard.");
+    } catch (error) {
+      console.error("Failed to update privacy settings:", error);
+      alert("Could not update privacy setting. Please try again.");
+      // Revert checkbox state on failure
+      e.target.checked = !isChecked;
     }
   };
 
@@ -181,7 +204,11 @@ const Profile = ({ onProfileUpdate }) => {
                 <p className="setting-name">Privacy Mode</p>
                 <p className="subtitle">Hide your rank from the public leaderboard.</p>
               </div>
-              <input type="checkbox" />
+              <input 
+                type="checkbox" 
+                checked={userData.privacyMode} 
+                onChange={handlePrivacyToggle} 
+              />
             </div>
           </div>
             <div className="setting-row">
