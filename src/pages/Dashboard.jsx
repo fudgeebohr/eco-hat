@@ -56,7 +56,18 @@ const Dashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'profile':
-        return <Profile userData={userData} />;
+        return (
+          <Profile 
+            onProfileUpdate={(updatedName) => {
+              // Update the dashboard states dynamically
+              setStudentName(updatedName);
+              setUserData(prev => prev ? { ...prev, fullName: updatedName } : null);
+              
+              // Keep localStorage fresh for subsequent page reloads
+              localStorage.setItem('studentName', updatedName);
+            }} 
+          />
+        );
       case 'rewards':
         return <Rewards userPoints={userData?.points || 0} />;
       default:
@@ -216,7 +227,7 @@ const Dashboard = () => {
           <Menu className="hamburger-icon" size={28} onClick={toggleSidebar} />
           <div className="user-profile-nav" onClick={() => setActiveTab('profile')} style={{cursor: 'pointer'}}>
              <div className="avatar"><User size={24} /></div>
-             <span>{studentName.toUpperCase()}</span>
+             <span>{(userData?.fullName || studentName).toUpperCase()}</span>
           </div>
         </header>
 

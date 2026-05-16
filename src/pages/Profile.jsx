@@ -4,7 +4,7 @@ import './Profile.css';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
-const Profile = () => {
+const Profile = ({ onProfileUpdate }) => {
   const navigate = useNavigate();
   
   // 1. Replaced the hardcoded object with React state
@@ -97,6 +97,10 @@ const Profile = () => {
         programAndYear: editFormData.programAndYear,
         studentNumber: editFormData.studentNumber
       }));
+
+      if (onProfileUpdate) {
+        onProfileUpdate(editFormData.fullName);
+      }
       
       // Close the modal
       setIsModalOpen(false);
