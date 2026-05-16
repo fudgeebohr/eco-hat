@@ -50,20 +50,6 @@
   font-size: 0.9rem;
 }
 
-.rank-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: #fff8e1;
-  color: #fbc02d;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  margin-top: 10px;
-  border: 1px solid #ffe082;
-}
-
 .edit-profile-btn {
   background: #f8f9fa;
   border: 1px solid #ddd;
@@ -129,17 +115,32 @@
   color: var(--maroon);
 }
 
-/* --- RESPONSIVE --- */
+/* --- RESPONSIVE UPDATES --- */
 @media (max-width: 768px) {
   .profile-header-card {
     flex-direction: column;
     text-align: center;
     gap: 20px;
   }
+  
   .profile-avatar-section {
     flex-direction: column;
     gap: 15px;
   }
+
+  /* Target the info text container to center all its blocks and children */
+  .profile-main-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;  /* Centers the rank badge inline item horizontally */
+    text-align: center;   /* Centers the text headers and sub-elements */
+  }
+
+  /* Forces the location item icon and text combination to inline-center perfectly */
+  .profile-main-info p {
+    justify-content: center;
+  }
+  
   .profile-grid {
     grid-template-columns: 1fr;
   }
@@ -250,4 +251,41 @@
 
 .modal-save-btn:hover {
   background-color: #600000; /* Slightly darker maroon for hover state */
+}
+
+/* --- CLEANED & HOLLOW RANK BADGE BASE --- */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 10px;
+  width: fit-content;
+  background-color: transparent; /* Makes the background hollow */
+  border-style: solid;
+  border-width: 1px;
+}
+
+/* --- DYNAMIC OUTLINES AND TEXT COLORS --- */
+.rank-green {
+  border-color: #4aa54f;   /* Forest Green border */
+  color: #4aa54f;          /* Forest Green text */
+}
+
+.rank-earth-blue {
+  border-color: #408edd;   /* Deep Earth/Ocean Blue border */
+  color: #408edd;          /* Deep Earth/Ocean Blue text */
+}
+
+.rank-gold {
+  border-color: #fba34c;   /* Warm Amber/Gold border */
+  color: #fba34c;          /* Warm Amber/Gold text */
+}
+
+.rank-magenta {
+  border-color: #dc3a7b;   /* Vibrant Magenta border */
+  color: #dc3a7b;          /* Vibrant Magenta text */
 }

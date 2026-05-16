@@ -50,6 +50,20 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
+  const getRankDetails = (totalPointsEarned) => {
+    if (totalPointsEarned <= 150) {
+      return { title: "Green Guardian", className: "rank-green" };
+    } else if (totalPointsEarned >= 151 && totalPointsEarned <= 250) {
+      return { title: "Eco Crusader", className: "rank-earth-blue" };
+    } else if (totalPointsEarned >= 251 && totalPointsEarned <= 350) {
+      return { title: "Planet Protector", className: "rank-gold" };
+    } else {
+      return { title: "Nature Knight", className: "rank-magenta" };
+    }
+  };
+
+  const { title: rankTitle, className: rankClass } = getRankDetails(userData.totalPointsEarned);
+
   // Open modal and populate the form with current user data
   const handleEditClick = () => {
     setEditFormData({
@@ -86,6 +100,7 @@ const Profile = () => {
       
       // Close the modal
       setIsModalOpen(false);
+      alert("Profile updated successfully!");
     } catch (error) {
       console.error("Failed to update profile:", error);
       alert("Failed to update profile. Please try again.");
@@ -102,7 +117,9 @@ const Profile = () => {
           <div className="profile-main-info">
             <h2>{userData.fullName?.toUpperCase()}</h2>
             <p><MapPin size={14} /> PUP Biñan Campus</p>
-            <span className="rank-badge"><Award size={14} /> {userData.rank}</span>
+            <span className={`rank-badge ${rankClass}`}>
+              <Award size={14} /> {rankTitle}
+            </span>
           </div>
         </div>
         <button className="edit-profile-btn" onClick={handleEditClick}>
