@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Award, ShieldCheck, MapPin, Edit3, Settings } from 'lucide-react';
+import { User, Mail, Award, ShieldCheck, MapPin, Edit3, Settings, X } from 'lucide-react';
 import './Profile.css';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -15,6 +15,13 @@ const Profile = () => {
     rank: "Loading...",
     totalPointsEarned: 0,
     points: 0,
+  });
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    fullName: "",
+    programAndYear: "",
+    studentNumber: ""
   });
 
   // 2. Inserted the useEffect block to fetch from the database
@@ -43,6 +50,48 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
+  // Open modal and populate the form with current user data
+  const handleEditClick = () => {
+    setEditFormData({
+      fullName: userData.fullName !== "Loading..." && userData.fullName !== "N/A" ? userData.fullName : "",
+      programAndYear: userData.programAndYear !== "Loading..." && userData.programAndYear !== "N/A" ? userData.programAndYear : "",
+      studentNumber: userData.studentNumber !== "Loading..." && userData.studentNumber !== "N/A" ? userData.studentNumber : ""
+    });
+    setIsModalOpen(true);
+  };
+
+  // Handle typing in the input fields
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Submit the updated data to the backend
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Send the updated data to your backend (adjust the endpoint if necessary)
+      await api.put('/profile', editFormData); 
+      
+      // Update the local state so the UI reflects the changes instantly
+      setUserData(prev => ({
+        ...prev,
+        fullName: editFormData.fullName,
+        programAndYear: editFormData.programAndYear,
+        studentNumber: editFormData.studentNumber
+      }));
+      
+      // Close the modal
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      alert("Failed to update profile. Please try again.");
+    }
+  };
+
   // The UI below remains exactly the same
   return (
     <div className="profile-container">
@@ -56,7 +105,7 @@ const Profile = () => {
             <span className="rank-badge"><Award size={14} /> {userData.rank}</span>
           </div>
         </div>
-        <button className="edit-profile-btn">
+        <button className="edit-profile-btn" onClick={handleEditClick}>
           <Edit3 size={16} /> Edit Profile
         </button>
       </div>
@@ -73,7 +122,7 @@ const Profile = () => {
               <p>{userData.fullName?.toUpperCase()}</p>
             </div>
             <div className="detail-item">
-              <span className="label">Course & Section</span>
+              <span className="label">Program & Year</span>
               <p>{userData.programAndYear}</p>
             </div>
             <div className="detail-item">
@@ -122,6 +171,68 @@ const Profile = () => {
             </div>
           </div>
         </div>
+
+        {/* --- EDIT PROFILE MODAL --- */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 style={{ margin: 0 }}>Edit Profile</h3>
+              <button onClick={() => setIsModalOpen(false)} className="modal-close-btn">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="modal-form">
+              <div className="modal-form-group">
+                <label className="modal-label">Full Name</label>
+                <input 
+                  type="text" 
+                  name="fullName" 
+                  value={editFormData.fullName} 
+                  onChange={handleInputChange} 
+                  className="modal-input"
+                  required 
+                />
+              </div>
+              
+              <div className="modal-form-group">
+                <label className="modal-label">Program & Year</label>
+                <input 
+                  type="text" 
+                  name="programAndYear" 
+                  value={editFormData.programAndYear} 
+                  onChange={handleInputChange} 
+                  className="modal-input"
+                  required 
+                />
+              </div>
+              
+              <div className="modal-form-group">
+                <label className="modal-label">Student Number</label>
+                <input 
+                  type="text" 
+                  name="studentNumber" 
+                  value={editFormData.studentNumber} 
+                  onChange={handleInputChange} 
+                  className="modal-input"
+                  required 
+                />
+              </div>
+
+              <div className="modal-action-buttons">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="modal-cancel-btn">
+                  Cancel
+                </button>
+                <button type="submit" className="modal-save-btn">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   );

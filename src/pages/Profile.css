@@ -144,3 +144,110 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --- EDIT PROFILE MODAL --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
+
+.modal-input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  outline: none;
+}
+
+.modal-input:focus {
+  border-color: #800000; /* Adds a nice maroon border when typing */
+}
+
+.modal-action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.modal-cancel-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  color: #555;
+}
+
+.modal-cancel-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.modal-save-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #800000; /* Maroon */
+  color: #fff;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.modal-save-btn:hover {
+  background-color: #600000; /* Slightly darker maroon for hover state */
+}
