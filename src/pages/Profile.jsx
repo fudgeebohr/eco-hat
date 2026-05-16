@@ -134,6 +134,32 @@ const Profile = ({ onProfileUpdate }) => {
     }
   };
 
+  const handleDeactivateAccount = async () => {
+  // Double-check confirmation prompt so users don't misclick it
+  const confirmDeactivate = window.confirm(
+    "Are you sure you want to deactivate your account? Your data will be archived until you log back in again."
+  );
+
+  if (!confirmDeactivate) return;
+
+  try {
+    // Send the deactivation request to the backend
+    await api.post('/deactivate');
+
+    alert("Your account has been deactivated. Logging out...");
+
+    // Clear authentication data
+    localStorage.removeItem('token');
+    localStorage.removeItem('studentName');
+
+    // Redirect user to login screen
+    navigate('/login');
+  } catch (error) {
+    console.error("Failed to deactivate account:", error);
+    alert("Could not deactivate account. Please try again later.");
+  }
+};
+
   // The UI below remains exactly the same
   return (
     <div className="profile-container">
@@ -211,12 +237,14 @@ const Profile = ({ onProfileUpdate }) => {
               />
             </div>
           </div>
-            <div className="setting-row">
+            <div className="setting-row" onClick={handleDeactivateAccount} style={{ cursor: 'pointer' }}>
               <div>
-                <p className="setting-name">Deactivate Account</p>
-                <p className="subtitle">Archive all your data.</p>
+                <p className="setting-name" style={{ color: '#dc2626' }}>Deactivate Account</p>
+                <p className="subtitle">Archive all your data momentarily.</p>
               </div>
-              <input type="button"></input><Ban size={15} />
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}>
+                <Ban size={17} style={{  color: '#dc2626' }} />
+              </button>
             </div>
         </div>
 
