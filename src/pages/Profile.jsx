@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Award, ShieldCheck, MapPin, Edit3, Settings, X } from 'lucide-react';
+import { User, Mail, Award, ShieldCheck, MapPin, Edit3, Settings, X, Ban } from 'lucide-react';
 import './Profile.css';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -178,19 +178,19 @@ const Profile = ({ onProfileUpdate }) => {
           <div className="settings-options">
             <div className="setting-row">
               <div>
-                <p className="setting-name">Email Notifications</p>
-                <p className="subtitle">Receive alerts when you redeem rewards.</p>
-              </div>
-              <input type="checkbox" defaultChecked />
-            </div>
-            <div className="setting-row">
-              <div>
                 <p className="setting-name">Privacy Mode</p>
                 <p className="subtitle">Hide your rank from the public leaderboard.</p>
               </div>
               <input type="checkbox" />
             </div>
           </div>
+            <div className="setting-row">
+              <div>
+                <p className="setting-name">Deactivate Account</p>
+                <p className="subtitle">Archive all your data.</p>
+              </div>
+              <input type="button"></input><Ban size={15} />
+            </div>
         </div>
 
         {/* --- EDIT PROFILE MODAL --- */}
