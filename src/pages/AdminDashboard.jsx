@@ -39,8 +39,16 @@ const AdminDashboard = () => {
       });
 
       scanner.render((decodedText) => {
-        setScannedData(decodedText);
-        setScanStatus('detected');
+        try {
+          // Parse the JSON string coming out of the student's phone screen QR
+          const parsedData = JSON.parse(decodedText);
+          setScannedData(parsedData); // Save the entire object to state instead of just text
+          setScanStatus('detected');
+        } catch (err) {
+          // Fallback if someone scans an invalid/non-JSON QR code
+          alert("Invalid QR format detected. Please scan a valid ECO-HAT token.");
+          setScanStatus('idle');
+        }
         scanner.clear(); 
       }, (error) => {});
     }
@@ -52,10 +60,34 @@ const AdminDashboard = () => {
     };
   }, [scanStatus]);
 
-  const handleRedemption = (status) => {
-    alert(`Redemption for ${scannedData} ${status === 'approve' ? 'Approved' : 'Rejected'}`);
-    setScanStatus('idle');
-    setScannedData(null);
+  const handleRedemption = async (status) => {
+    if (status === 'reject') {
+      alert("Redemption cancelled by Admin.");
+      setScanStatus('idle');
+      setScannedData(null);
+      return;
+    }
+
+    try {
+      // Import api from your config file if not already done at the top
+      const response = await api.post('/auth/admin/verify-redemption', {
+        qrTokenString: scannedData.qrTokenString,
+        studentNumber: scannedData.studentNumber,
+        totalCost: scannedData.totalCost,
+        summary: scannedData.summary
+      });
+
+      if (response.data.success) {
+        alert(response.data.message); // Displays the success balance drop notice
+      }
+    } catch (error) {
+      console.error("Verification processing failed:", error);
+      alert(error.response?.data?.message || "An error occurred during backend redemption verification.");
+    } finally {
+      // Reset state layout loops back to default ready state
+      setScanStatus('idle');
+      setScannedData(null);
+    }
   };
 
   return (
@@ -170,11 +202,14 @@ const AdminDashboard = () => {
                 {scanStatus === 'detected' && (
                   <div className="scan-result-card">
                     <div className="student-info">
-                      <h4 className="maroon-text">Verification Successful</h4>
-                      <p>Claim ID: <strong>{scannedData}</strong></p>
+                      <h4 className="maroon-text" style={{ marginBottom: '8px' }}>Claim Package Detected</h4>
+                      <p style={{ margin: '4px 0' }}>Student No: <strong>{scannedData?.studentNumber}</strong></p>
+                      <p style={{ margin: '4px 0' }}>Items: <span style={{ color: '#555' }}>{scannedData?.summary}</span></p>
+                      <p style={{ margin: '4px 0' }}>Cost: <strong className="maroon-text">{scannedData?.totalCost} pts</strong></p>
+                      <p style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>Voucher Ref: {scannedData?.qrTokenString}</p>
                     </div>
-                    <div className="action-row">
-                      <button className="action-btn approve" onClick={() => handleRedemption('approve')}>Approve</button>
+                    <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                      <button className="action-btn approve" onClick={() => handleRedemption('approve')}>Confirm & Deduct</button>
                       <button className="action-btn reject" onClick={() => handleRedemption('reject')}>Cancel</button>
                     </div>
                   </div>

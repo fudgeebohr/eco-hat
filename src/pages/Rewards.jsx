@@ -118,8 +118,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
         // ADDED HERE: Clear persistent cache so the cart is empty on next render
         localStorage.removeItem('ecohat_cart'); 
         
-        if (onPointsUpdate) onPointsUpdate(userPoints - totalCartCost);
-        
         // Optional: Alert the user that the code has been successfully bundled
         alert("Checkout successful! Your unified QR code has been generated.");
       }
@@ -243,7 +241,12 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                 <p className="subtitle" style={{ marginBottom: '20px' }}>Scan this single-use token at the kiosk</p>
                 
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-                  <QRCodeSVG value={generatedQr} size={200} fgColor="#800000" level="H" />
+                  <QRCodeSVG value={JSON.stringify({
+                    qrTokenString: generatedQr,
+                    studentNumber: userData?.studentNumber || localStorage.getItem('studentNumber'), // or wherever studentNumber is held
+                    totalCost: totalCartCost,
+                    summary: cart.map(i => `${i.quantity}x ${i.name}`).join(', ')
+                  })} size={200} fgColor="#800000" level="H" />
                 </div>
 
                 <div style={{ background: '#f5f5f5', padding: '10px', borderRadius: '6px', margin: '15px 0', fontWeight: 'bold', wordBreak: 'break-all' }}>
