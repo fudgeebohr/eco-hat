@@ -253,3 +253,67 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+/* Container to group the header cards together */
+.rewards-header-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+/* --- PERSISTENT FULL REWARDS GRID --- */
+.rewards-grid-full {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+/* ADD THIS NEW BREAKPOINT FOR TARGETING MOBILE VIEWS */
+@media (max-width: 550px) {
+  .rewards-grid-full {
+    /* Forces a strict 2-column layout regardless of individual item card size dimensions */
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px; /* Pulls the items slightly closer together on tiny screens */
+  }
+
+  .reward-item-card {
+    padding: 15px 10px; /* Reduces extreme inner card spacing to prioritize real estate */
+  }
+
+  .reward-item-card .reward-icon-wrapper svg {
+    width: 36px;  /* Slightly scales down icons so text doesn't clash */
+    height: 36px;
+  }
+  
+  .item-name {
+    font-size: 0.95rem; /* Keeps layout headers neat and prevents wrap clutter */
+  }
+}
+
+/* Specific mini buttons for the cart layout */
+.view-cart-btn {
+  background: transparent;
+  border: 1px solid var(--maroon);
+  color: var(--maroon);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: 0.2s;
+}
+
+.view-cart-btn:hover {
+  background: #fff5f5;
+}
+
+/* Responsive adjustments for mobile screens */
+@media (max-width: 768px) {
+  .rewards-header-row {
+    grid-template-columns: 1fr;
+  }
+}
