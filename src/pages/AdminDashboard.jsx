@@ -90,7 +90,7 @@ const AdminDashboard = () => {
 
     try {
       // Map the minified keys back to your backend expectations
-      const response = await api.post('/auth/admin/verify-redemption', {
+      const response = await api.post('/admin/verify-redemption', {
         qrTokenString: scannedData.token,      // 'token' from student QR
         studentNumber: scannedData.studentNum, // 'studentNum' from student QR
         totalCost: scannedData.cost,           // 'cost' from student QR
