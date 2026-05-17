@@ -31,31 +31,38 @@ const AdminDashboard = () => {
   useEffect(() => {
     let scanner = null;
     if (scanStatus === 'scanning') {
+      // Use a distinct element initialization pattern to avoid duplicate element node binding bugs
       scanner = new Html5QrcodeScanner("reader", { 
-        fps: 10, 
-        qrbox: { width: 180, height: 180 },
+        fps: 15, // Bumped up slightly for faster frame rate capture paths
+        qrbox: { width: 220, height: 220 }, // Marginally larger tracking boundaries for better phone resolution focus
         rememberLastUsedCamera: true,
         supportedScanTypes: [0, 1]
       });
 
       scanner.render((decodedText) => {
         try {
-          // Parse the JSON string coming out of the student's phone screen QR
           const parsedData = JSON.parse(decodedText);
-          setScannedData(parsedData); // Save the entire object to state instead of just text
+          setScannedData(parsedData);
           setScanStatus('detected');
+          
+          // Safely shut down scanning processes completely inside the promise loop handler
+          scanner.clear().catch(err => console.error("Scanner clear warning:", err));
         } catch (err) {
-          // Fallback if someone scans an invalid/non-JSON QR code
-          alert("Invalid QR format detected. Please scan a valid ECO-HAT token.");
-          setScanStatus('idle');
+          alert("Invalid QR structure format detected. Please try re-generating a clean student token code.");
+          // If data fails parsing loops, cleanly kill the session back to idle state parameters safely
+          scanner.clear()
+            .then(() => setScanStatus('idle'))
+            .catch(() => setScanStatus('idle'));
         }
-        scanner.clear(); 
-      }, (error) => {});
+      }, (error) => {
+        // Leave verbose debug logging arrays completely empty here to stop console pollution profiles
+      });
     }
 
+    // Cleaning handler hook ensures that unmounting elements drop active hardware video pipelines instantly
     return () => {
       if (scanner) {
-        scanner.clear().catch(err => console.error("Failed to clear scanner", err));
+        scanner.clear().catch(err => console.error("Failed to clear scanner on unmount phase", err));
       }
     };
   }, [scanStatus]);

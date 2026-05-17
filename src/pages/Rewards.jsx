@@ -15,6 +15,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
   const [generatedQr, setGeneratedQr] = useState(null);
   const [cart, setCart] = useState([]);
   const [studentNumber, setStudentNumber] = useState('');
+  const [checkoutSummary, setCheckoutSummary] = useState('');
 
   // 1. Fetch the cloud cart array on component mounting sessions
   useEffect(() => {
@@ -114,15 +115,15 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
       const response = await api.post('/rewards/checkout-cart', payload);
 
       if (response.data.success) {
-        setGeneratedQr(response.data.qrTokenString); 
-        setCart([]); // Empty out local React cart state
-        
-        // ADDED HERE: Clear persistent cache so the cart is empty on next render
-        localStorage.removeItem('ecohat_cart'); 
-        
-        // Optional: Alert the user that the code has been successfully bundled
-        alert("Checkout successful! Your unified QR code has been generated.");
-      }
+      // Generate the summary text string BEFORE emptying out the bag state array
+      const summaryText = cart.map(i => `${i.quantity}x ${i.name}`).join(', ');
+      setCheckoutSummary(summaryText);
+
+      setGeneratedQr(response.data.qrTokenString); 
+      setCart([]); // Now safe to clear out
+      localStorage.removeItem('ecohat_cart'); 
+      alert("Checkout successful! Your unified QR code has been generated.");
+    }
     } catch (error) {
       console.error("Cart checkout error:", error);
       alert(error.response?.data?.message || "Checkout processing encountered an error.");
@@ -248,7 +249,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                     qrTokenString: generatedQr,
                     studentNumber: studentNumber || localStorage.getItem('studentNumber') || 'Unknown', 
                     totalCost: totalCartCost,
-                    summary: cart.map(i => `${i.quantity}x ${i.name}`).join(', ')
+                    summary: checkoutSummary // ◄ FIX: Read from the static saved string state layout
                   })} size={200} fgColor="#800000" level="H" />
                 </div>
 
