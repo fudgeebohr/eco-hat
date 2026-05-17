@@ -226,7 +226,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1rem', borderTop: '2px solid #eee', paddingTop: '15px', marginBottom: '20px' }}>
-                      <span>Total Basket Cost:</span>
+                      <span>Total Cost:</span>
                       <span style={{ color: 'var(--maroon)' }}>{totalCartCost} pts</span>
                     </div>
 
