@@ -14,14 +14,16 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
   const [isCartModalOpen, setIsCartModalOpen] = useState(false); // Controls View Cart Modal
   const [generatedQr, setGeneratedQr] = useState(null);
   const [cart, setCart] = useState([]);
+  const [studentNumber, setStudentNumber] = useState('');
 
   // 1. Fetch the cloud cart array on component mounting sessions
   useEffect(() => {
     const fetchCloudCart = async () => {
       try {
         const response = await api.get('/profile');
-        if (response.data && response.data.cart) {
-          setCart(response.data.cart);
+        if (response.data) {
+          if (response.data.cart) setCart(response.data.cart);
+          if (response.data.studentNumber) setStudentNumber(response.data.studentNumber);
         }
       } catch (error) {
         console.error("Failed to recover multi-device cart configurations:", error);
@@ -236,20 +238,21 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
               </>
             ) : (
               /* --- BATCH REDEMPTION QR VIEW --- */
-              <div style={{ textAlign: 'center', padding: '10px 0' }}>
+              <div className="modal-content qr-view"> {/* ◄ ADDED class "qr-view" here */}
                 <h3 className="maroon-text" style={{ marginBottom: '5px' }}>Redemption QR Code</h3>
                 <p className="subtitle" style={{ marginBottom: '20px' }}>Scan this single-use token at the kiosk</p>
                 
-                <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+                {/* REMOVED inline display:flex style and replaced it with your clean CSS wrapper class */}
+                <div className="qr-wrapper"> {/* ◄ ADDED class "qr-wrapper" here */}
                   <QRCodeSVG value={JSON.stringify({
                     qrTokenString: generatedQr,
-                    studentNumber: userData?.studentNumber || localStorage.getItem('studentNumber'), // or wherever studentNumber is held
+                    studentNumber: studentNumber || localStorage.getItem('studentNumber') || 'Unknown', 
                     totalCost: totalCartCost,
                     summary: cart.map(i => `${i.quantity}x ${i.name}`).join(', ')
                   })} size={200} fgColor="#800000" level="H" />
                 </div>
 
-                <div style={{ background: '#f5f5f5', padding: '10px', borderRadius: '6px', margin: '15px 0', fontWeight: 'bold', wordBreak: 'break-all' }}>
+                <div style={{ background: '#f5f5f5', padding: '10px', borderRadius: '6px', margin: '15px 0', fontWeight: 'bold', wordBreak: 'break-all', width: '100%', boxSizing: 'border-box' }}>
                   {generatedQr}
                 </div>
                 
