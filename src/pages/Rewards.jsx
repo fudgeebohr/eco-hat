@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShoppingCart, X, Minus, Plus, AlertCircle, Trophy, 
   Book, PenTool, Pencil, FileText, Scissors, Highlighter, 
@@ -13,14 +13,42 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
   const [quantity, setQuantity] = useState(1);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false); // Controls View Cart Modal
   const [generatedQr, setGeneratedQr] = useState(null);
-  const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem('ecohat_cart');
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+  const [cart, setCart] = useState([]);
 
-  React.useEffect(() => {
-    const cleanCart = cart.map(({ icon, ...rest }) => rest);
-    localStorage.setItem('ecohat_cart', JSON.stringify(cleanCart));
+  // 1. Fetch the cloud cart array on component mounting sessions
+  useEffect(() => {
+    const fetchCloudCart = async () => {
+      try {
+        const response = await api.get('/profile');
+        if (response.data && response.data.cart) {
+          setCart(response.data.cart);
+        }
+      } catch (error) {
+        console.error("Failed to recover multi-device cart configurations:", error);
+      }
+    };
+    fetchCloudCart();
+  }, []);
+
+  // 2. Automatically push mutations up to your MongoDB cluster
+  useEffect(() => {
+    // Prevent executing an API post request if the user hasn't completed baseline mount loading checks
+    if (cart.length === 0) return;
+
+    const syncCartToCloud = async () => {
+      try {
+        await api.post('/cart/sync', { cart });
+      } catch (error) {
+        console.error("Cross-device sync layer communication breakdowns:", error);
+      }
+    };
+
+    // Setting up a minor timeout debounce stops your application from spamming requests while clicking quantity buttons
+    const delayDebounce = setTimeout(() => {
+      syncCartToCloud();
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
   }, [cart]);
 
   // Calculate unique item count and totals
@@ -31,25 +59,24 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
 
   const addToCart = (item, selectedQty) => {
     setCart(prevCart => {
-      // FIX: Changed item.id matching to use the correct key from your inventory list
-      const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
+      // Look for itemId tracking variables returning from our schema model
+      const existingItem = prevCart.find(cartItem => cartItem.itemId === item.id);
       if (existingItem) {
         return prevCart.map(cartItem =>
-          cartItem.id === item.id 
+          cartItem.itemId === item.id 
             ? { ...cartItem, quantity: cartItem.quantity + selectedQty } 
             : cartItem
         );
       }
-      return [...prevCart, { ...item, quantity: selectedQty }];
+      return [...prevCart, { itemId: item.id, name: item.name, price: item.price, quantity: selectedQty }];
     });
-    setSelectedItem(null); // Safely dismiss selection layer
+    setSelectedItem(null);
   };
 
   // Inline adjustment inside the side panel modal
   const updateQuantity = (itemId, amount) => {
     setCart(prevCart => prevCart.map(item => {
-      // FIX: Ensure itemId correctly references item.id
-      if (item.id === itemId) {
+      if (item.itemId === itemId) {
         const newQty = item.quantity + amount;
         return newQty > 0 ? { ...item, quantity: newQty } : item;
       }
@@ -58,7 +85,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
   };
 
   const removeFromCart = (itemId) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== itemId));
+    setCart(prevCart => prevCart.filter(item => item.itemId !== itemId));
   };
 
   const closeModal = () => {
@@ -182,16 +209,20 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                   <>
                     <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '20px' }}>
                       {cart.map(item => (
-                        <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
+                        // 1. UPDATED: Changed item.id to item.itemId
+                        <div key={item.itemId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
                           <div>
                             <p style={{ fontWeight: '600', margin: 0 }}>{item.name}</p>
                             <span style={{ fontSize: '12px', color: '#666' }}>{item.price * item.quantity} pts</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button onClick={() => updateQuantity(item.id, -1)} style={{ padding: '2px 6px' }}><Minus size={12}/></button>
+                            // 2. UPDATED: Changed item.id to item.itemId inside function parameters
+                            <button onClick={() => updateQuantity(item.itemId, -1)} style={{ padding: '2px 6px' }}><Minus size={12}/></button>
                             <span style={{ minWidth: '15px', textAlign: 'center' }}>{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.id, 1)} style={{ padding: '2px 6px' }}><Plus size={12}/></button>
-                            <button onClick={() => removeFromCart(item.id)} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', marginLeft: '5px' }}><Trash2 size={14}/></button>
+                            // 3. UPDATED: Changed item.id to item.itemId inside function parameters
+                            <button onClick={() => updateQuantity(item.itemId, 1)} style={{ padding: '2px 6px' }}><Plus size={12}/></button>
+                            // 4. UPDATED: Changed item.id to item.itemId inside function parameters
+                            <button onClick={() => removeFromCart(item.itemId)} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', marginLeft: '5px' }}><Trash2 size={14}/></button>
                           </div>
                         </div>
                       ))}
