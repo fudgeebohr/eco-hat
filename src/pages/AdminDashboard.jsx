@@ -38,36 +38,41 @@ const AdminDashboard = () => {
 
       const startScanner = async () => {
         try {
+          // 1. CALCULATE RESPONSIVE BOX SIZE (Wider view bounding box for phones)
+          const isMobile = window.innerWidth <= 550;
+          const qrBoxWidth = isMobile ? 260 : 220; // Opens up the frame grid on mobile screens
+
           await html5Qrcode.start(
-            { facingMode: "environment" }, // Forces the phone's back camera lens
+            { facingMode: "environment" }, // Focuses back camera lens array
             {
-              fps: 15,
-              qrbox: { width: 220, height: 220 }
+              fps: 20, // Snappier frame scanning sampling limits
+              qrbox: { width: qrBoxWidth, height: qrBoxWidth },
+              aspectRatio: 1.0, // Hard locks a square dimension framework
+              experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true // ◄ CRITICAL: Leverages native mobile GPU decoding
+              }
             },
             (decodedText) => {
               try {
-                // Parse the short keys layout coming out of the student device screen
                 const parsedData = JSON.parse(decodedText);
-                
                 setScannedData(parsedData);
-                setScanStatus('detected'); // Shifts UI window over to show Approve/Cancel options
+                setScanStatus('detected');
 
-                // Cleanly kill the camera pipeline track before showing system prompts
                 html5Qrcode.stop().catch(err => console.error("Camera release error:", err));
               } catch (err) {
-                alert("Invalid QR structure code format. Please try re-generating a clean supply bag token.");
+                alert("Invalid QR structure code format.");
                 html5Qrcode.stop()
                   .then(() => setScanStatus('idle'))
                   .catch(() => setScanStatus('idle'));
               }
             },
             (errorMessage) => {
-              // Standard frame scanning loop noise — keep empty to preserve performance tracks
+              // Frame track tracking loop drop pass filtering
             }
           );
         } catch (err) {
           console.error("Camera startup error:", err);
-          alert("Could not start camera. Please verify device access permissions are enabled.");
+          alert("Could not start camera. Please verify device access permissions.");
           setScanStatus('idle');
         }
       };
