@@ -140,36 +140,47 @@ const Dashboard = () => {
                   <tbody>
                     {userData?.history && userData.history.length > 0 ? (
                       userData.history.map((item, index) => {
-                        // Determine if this is a positive or negative action
-                        // You can also check by string: item.action === 'Bottle Collection'
-                        const isPositive = item.points > 0; 
+                        
+                        const rawPoints = item.points !== undefined ? item.points : 0;
+                        const isPositive = rawPoints > 0;
                         const colorClass = isPositive ? 'text-green' : 'text-red';
-                        const actionText = isPositive ? "Bottle Collection" : "Rewards Redemption";
+                        
+                        // Reverted to your initial text logic matching your screenshot layout
+                        const actionText = isPositive ? 'Bottle Collection' : 'Rewards Redemption';
 
                         return (
-                          <React.Fragment key={item._id || index}>
-                            {/* Main Row: Action, Points, Date */}
-                            <tr className="activity-main-row">
-                              <td className="action-col">{actionText}</td>
-                              <td className={`points-col ${colorClass}`}>
-                                {item.points > 0 ? `+${item.points}` : item.points}
-                              </td>
-                              <td className="date-col">
-                                {new Date(item.date).toLocaleDateString()}
-                              </td>
-                            </tr>
-                            {/* Sub Row: Description */}
-                            <tr className="activity-desc-row">
-                              <td colSpan="3" className={`desc-col ${colorClass}`}>
-                                {item.description}
-                              </td>
-                            </tr>
-                          </React.Fragment>
+                          <tr key={item._id || index} className="activity-main-row" style={{ borderBottom: '1px solid #f5f5f5' }}>
+                            
+                            {/* LEFT COLUMN: ACTION TITLE & THE LIVE BLOCK DESCRIPTION */}
+                            <td className="action-col" style={{ padding: '12px 10px', textAlign: 'left' }}>
+                              <div style={{ fontWeight: '600', color: '#333', fontSize: '0.95rem' }}>{actionText}</div>
+                              
+                              {/* Renders the description string right under the header title */}
+                              {item.description && (
+                                <div className={colorClass} style={{ fontSize: '0.82rem', fontStyle: 'italic', marginTop: '4px' }}>
+                                  {item.description}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* MIDDLE COLUMN: POINTS VALUE */}
+                            <td className={`points-col ${colorClass}`} style={{ padding: '12px 10px', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {isPositive ? `+${rawPoints}` : rawPoints}
+                            </td>
+
+                            {/* RIGHT COLUMN: CALENDAR DATE */}
+                            <td className="date-col" style={{ padding: '12px 10px', color: '#666', fontSize: '0.9rem' }}>
+                              {item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}
+                            </td>
+
+                          </tr>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan="3" className="no-data">No recent activity</td>
+                        <td colSpan="3" style={{ textAlign: 'center', padding: '30px', color: '#999', fontStyle: 'italic' }}>
+                          No Recent Activity Found
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -179,7 +190,7 @@ const Dashboard = () => {
           </div>
         );
     }
-  };
+  }
 
   return (
     <div className="dashboard-wrapper">
