@@ -1,10 +1,26 @@
 /* src/pages/Rewards.css */
 
 .rewards-container {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 10px;
   animation: fadeIn 0.4s ease-out;
 }
 
-/* --- REWARDS BALANCE CARD --- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- REWARDS HEADER ROW (BALANCE & CART) --- */
+.rewards-header-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
 .rewards-balance-header {
   margin-bottom: 25px;
   width: 100%;
@@ -18,11 +34,40 @@
   opacity: 0.9;
 }
 
-/* --- GRID --- */
-.rewards-grid {
+.view-cart-btn {
+  background: transparent;
+  border: 1px solid var(--maroon);
+  color: var(--maroon);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: 0.2s;
+}
+
+.view-cart-btn:hover {
+  background: #fff5f5;
+}
+
+/* Points label styling consistency with main dashboard */
+.points-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gold);
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --- REWARDS INVENTORY GRID --- */
+.rewards-grid-full {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 20px;
+  width: 100%;
 }
 
 .reward-item-card {
@@ -32,6 +77,9 @@
   text-align: center;
   border: 1px solid #eee;
   transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .reward-item-card:hover {
@@ -40,9 +88,13 @@
   box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
-.reward-icon {
-  font-size: 3.5rem;
-  margin-bottom: 12px;
+.reward-icon-wrapper {
+  color: var(--maroon);
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px; /* Consistent height for icons */
 }
 
 .item-name {
@@ -79,24 +131,32 @@
   background: var(--dark-maroon);
 }
 
-/* --- MODAL --- */
+/* --- SYSTEM MODALS & LAYOVER CONTROLS --- */
 .modal-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 9999 !important; /* Locks overlay view completely over item cards */
   backdrop-filter: blur(4px);
+  padding: 15px;
 }
 
 .reward-modal {
+  background: var(--white); /* CRITICAL: Fixed background color for mobile screens */
   width: 100%;
   max-width: 420px;
   position: relative;
   border-left: 8px solid var(--gold);
   padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  z-index: 10000 !important;
   animation: modalPop 0.3s ease-out;
 }
 
@@ -133,7 +193,7 @@
   border-radius: 10px;
 }
 
-.qty-controls button {
+.qty-controls button, .qty-mini-btn {
   background: white;
   border: 1px solid #ddd;
   width: 35px;
@@ -147,7 +207,7 @@
   transition: 0.2s;
 }
 
-.qty-controls button:hover {
+.qty-controls button:hover, .qty-mini-btn:hover {
   background: var(--maroon);
   color: white;
 }
@@ -173,6 +233,23 @@
   font-size: 1.2rem;
 }
 
+.confirm-btn, .done-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--maroon);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirm-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* --- QR REDEMPTION VIEWS --- */
 .qr-view {
   text-align: center;
 }
@@ -191,24 +268,11 @@
   margin-bottom: 5px;
 }
 
-.confirm-btn, .done-btn {
-  width: 100%;
-  padding: 16px;
-  background: var(--maroon);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.confirm-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-/* --- MOBILE --- */
+/* --- DEVICE RESPONSIVE BREAKPOINTS --- */
 @media (max-width: 768px) {
+  .rewards-header-row {
+    grid-template-columns: 1fr;
+  }
   .rewards-balance-header {
     flex-direction: column;
     text-align: center;
@@ -223,97 +287,27 @@
   }
 }
 
-.reward-icon-wrapper {
-  color: var(--maroon);
-  margin-bottom: 15px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 60px; /* Consistent height for icons */
-}
-
-.reward-item-card {
-  background: var(--white);
-  padding: 30px 20px;
-  border-radius: 12px;
-  text-align: center;
-  border: 1px solid #eee;
-  transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Points label styling consistency with main dashboard */
-.points-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--gold);
-  margin-top: 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Container to group the header cards together */
-.rewards-header-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-/* --- PERSISTENT FULL REWARDS GRID --- */
-.rewards-grid-full {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
-  width: 100%;
-}
-
-/* ADD THIS NEW BREAKPOINT FOR TARGETING MOBILE VIEWS */
 @media (max-width: 550px) {
+  /* Prevent background scrolling shifts on real phone viewports */
+  body:has(.modal-overlay) {
+    overflow: hidden;
+  }
+
   .rewards-grid-full {
-    /* Forces a strict 2-column layout regardless of individual item card size dimensions */
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px; /* Pulls the items slightly closer together on tiny screens */
+    grid-template-columns: repeat(2, 1fr) !important; /* Strict 2-column rule */
+    gap: 12px;
   }
 
   .reward-item-card {
-    padding: 15px 10px; /* Reduces extreme inner card spacing to prioritize real estate */
+    padding: 15px 10px;
   }
 
   .reward-item-card .reward-icon-wrapper svg {
-    width: 36px;  /* Slightly scales down icons so text doesn't clash */
+    width: 36px;
     height: 36px;
   }
   
   .item-name {
-    font-size: 0.95rem; /* Keeps layout headers neat and prevents wrap clutter */
-  }
-}
-
-/* Specific mini buttons for the cart layout */
-.view-cart-btn {
-  background: transparent;
-  border: 1px solid var(--maroon);
-  color: var(--maroon);
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: 0.2s;
-}
-
-.view-cart-btn:hover {
-  background: #fff5f5;
-}
-
-/* Responsive adjustments for mobile screens */
-@media (max-width: 768px) {
-  .rewards-header-row {
-    grid-template-columns: 1fr;
+    font-size: 0.95rem;
   }
 }
