@@ -5,6 +5,7 @@ import {
   Menu, X, LayoutDashboard, Package, Users, BarChart3, 
   Settings, LogOut, Search, Plus, Leaf, Image as ImageIcon, FileText, QrCode, Check, Ban 
 } from 'lucide-react';
+import api from '../api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
