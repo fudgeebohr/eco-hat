@@ -110,13 +110,16 @@ const Dashboard = () => {
                   </thead>
                   <tbody>
                     {leaderboard && leaderboard.length > 0 ? (
-                      leaderboard.map((user, index) => (
-                        <tr key={user._id || index}>
-                          <td className="rank-col">#{index + 1}</td>
-                          <td className="name-col">{user.fullName}</td>
-                          <td className="points-col">{user.totalPointsEarned || 0}</td>
-                        </tr>
-                      ))
+                      // FIX: Creates a copy of the array and sorts totalPointsEarned descending
+                      [...leaderboard]
+                        .sort((a, b) => (b.totalPointsEarned || 0) - (a.totalPointsEarned || 0))
+                        .map((user, index) => (
+                          <tr key={user._id || index}>
+                            <td className="rank-col">#{index + 1}</td>
+                            <td className="name-col">{user.fullName}</td>
+                            <td className="points-col">{user.totalPointsEarned || 0}</td>
+                          </tr>
+                        ))
                     ) : (
                       <tr>
                         <td colSpan="3" className="no-data">No data available</td>
