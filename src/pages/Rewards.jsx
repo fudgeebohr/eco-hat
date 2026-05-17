@@ -16,6 +16,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
   const [cart, setCart] = useState([]);
   const [studentNumber, setStudentNumber] = useState('');
   const [checkoutSummary, setCheckoutSummary] = useState('');
+  const [checkoutCost, setCheckoutCost] = useState(0);
 
   // 1. Fetch the cloud cart array on component mounting sessions
   useEffect(() => {
@@ -115,15 +116,16 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
       const response = await api.post('/rewards/checkout-cart', payload);
 
       if (response.data.success) {
-      // Generate the summary text string BEFORE emptying out the bag state array
-      const summaryText = cart.map(i => `${i.quantity}x ${i.name}`).join(', ');
-      setCheckoutSummary(summaryText);
+        const summaryText = cart.map(i => `${i.quantity}x ${i.name}`).join(', ');
+        setCheckoutSummary(summaryText);
+        // Capture the final cost right before clearing the cart array
+        setCheckoutCost(totalCartCost); 
 
-      setGeneratedQr(response.data.qrTokenString); 
-      setCart([]); // Now safe to clear out
-      localStorage.removeItem('ecohat_cart'); 
-      alert("Checkout successful! Your unified QR code has been generated.");
-    }
+        setGeneratedQr(response.data.qrTokenString); 
+        setCart([]); 
+        localStorage.removeItem('ecohat_cart'); 
+        alert("Checkout successful! Your unified QR code has been generated.");
+      }
     } catch (error) {
       console.error("Cart checkout error:", error);
       alert(error.response?.data?.message || "Checkout processing encountered an error.");
@@ -246,11 +248,11 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                 {/* REMOVED inline display:flex style and replaced it with your clean CSS wrapper class */}
                 <div className="qr-wrapper"> {/* ◄ ADDED class "qr-wrapper" here */}
                   <QRCodeSVG value={JSON.stringify({
-                    qrTokenString: generatedQr,
-                    studentNumber: studentNumber || localStorage.getItem('studentNumber') || 'Unknown', 
-                    totalCost: totalCartCost,
-                    summary: checkoutSummary // ◄ FIX: Read from the static saved string state layout
-                  })} size={200} fgColor="#800000" level="H" />
+                    token: generatedQr,
+                    studentNum: studentNumber || localStorage.getItem('studentNumber') || 'Unknown', 
+                    cost: checkoutCost, // ◄ Uses the locked, static state value
+                    items: checkoutSummary
+                  })} size={220} fgColor="#800000" level="M" />
                 </div>
 
                 <div style={{ background: '#f5f5f5', padding: '10px', borderRadius: '6px', margin: '15px 0', fontWeight: 'bold', wordBreak: 'break-all', width: '100%', boxSizing: 'border-box' }}>

@@ -76,22 +76,21 @@ const AdminDashboard = () => {
     }
 
     try {
-      // Import api from your config file if not already done at the top
+      // Map the minified keys back to your backend expectations
       const response = await api.post('/auth/admin/verify-redemption', {
-        qrTokenString: scannedData.qrTokenString,
-        studentNumber: scannedData.studentNumber,
-        totalCost: scannedData.totalCost,
-        summary: scannedData.summary
+        qrTokenString: scannedData.token,      // 'token' from student QR
+        studentNumber: scannedData.studentNum, // 'studentNum' from student QR
+        totalCost: scannedData.cost,           // 'cost' from student QR
+        summary: scannedData.items             // 'items' from student QR
       });
 
       if (response.data.success) {
-        alert(response.data.message); // Displays the success balance drop notice
+        alert(response.data.message);
       }
     } catch (error) {
       console.error("Verification processing failed:", error);
-      alert(error.response?.data?.message || "An error occurred during backend redemption verification.");
+      alert(error.response?.data?.message || "An error occurred during verification.");
     } finally {
-      // Reset state layout loops back to default ready state
       setScanStatus('idle');
       setScannedData(null);
     }
@@ -210,9 +209,9 @@ const AdminDashboard = () => {
                   <div className="scan-result-card">
                     <div className="student-info">
                       <h4 className="maroon-text" style={{ marginBottom: '8px' }}>Claim Package Detected</h4>
-                      <p style={{ margin: '4px 0' }}>Student No: <strong>{scannedData?.studentNumber}</strong></p>
-                      <p style={{ margin: '4px 0' }}>Items: <span style={{ color: '#555' }}>{scannedData?.summary}</span></p>
-                      <p style={{ margin: '4px 0' }}>Cost: <strong className="maroon-text">{scannedData?.totalCost} pts</strong></p>
+                      <p style={{ margin: '4px 0' }}>Student No: <strong>{scannedData?.studentNum}</strong></p>
+                      <p style={{ margin: '4px 0' }}>Items: <span style={{ color: '#555' }}>{scannedData?.items}</span></p>
+                      <p style={{ margin: '4px 0' }}>Cost: <strong className="maroon-text">{scannedData?.cost} pts</strong></p>
                       <p style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>Voucher Ref: {scannedData?.qrTokenString}</p>
                     </div>
                     <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
