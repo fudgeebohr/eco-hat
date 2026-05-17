@@ -216,12 +216,9 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                             <span style={{ fontSize: '12px', color: '#666' }}>{item.price * item.quantity} pts</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            // 2. UPDATED: Changed item.id to item.itemId inside function parameters
                             <button onClick={() => updateQuantity(item.itemId, -1)} style={{ padding: '2px 6px' }}><Minus size={12}/></button>
                             <span style={{ minWidth: '15px', textAlign: 'center' }}>{item.quantity}</span>
-                            // 3. UPDATED: Changed item.id to item.itemId inside function parameters
                             <button onClick={() => updateQuantity(item.itemId, 1)} style={{ padding: '2px 6px' }}><Plus size={12}/></button>
-                            // 4. UPDATED: Changed item.id to item.itemId inside function parameters
                             <button onClick={() => removeFromCart(item.itemId)} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', marginLeft: '5px' }}><Trash2 size={14}/></button>
                           </div>
                         </div>
