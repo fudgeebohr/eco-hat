@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Menu, X, LayoutDashboard, User, Gift, LogOut, 
-  Trophy, History, Leaf, ChevronRight
+  Trophy, History, Leaf, ChevronRight, Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Profile from './Profile'; 
-import Rewards from './Rewards'; //
+import Rewards from './Rewards'; 
 import './Dashboard.css';
-import api, { getProfile, getLeaderboard } from '../api'; // Adjust path
+import api from '../api'; // Adjusted to match your primary api import pattern
 
 const Dashboard = () => {
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard'); //
-  const [studentName, setStudentName] = useState(''); // For displaying in nav
-  const [userData, setUserData] = useState(null); // Real user data from DB
-  const [leaderboard, setLeaderboard] = useState([]); // Top 10 users from DB
+  const [activeTab, setActiveTab] = useState('dashboard'); 
+  const [studentName, setStudentName] = useState(''); 
+  const [userData, setUserData] = useState(null); 
+  const [leaderboard, setLeaderboard] = useState([]); 
   const [loading, setLoading] = useState(true);
+  const totalHistory = userData?.history 
+    ? [...userData.history].sort((a, b) => new Date(b.date) - new Date(a.date))
+    : [];
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,8 +33,8 @@ const Dashboard = () => {
         setLoading(true);
         
         const [profileRes, leaderboardRes] = await Promise.all([
-          api.get('/profile'),      // → /api/auth/profile ✅
-          api.get('/leaderboard')   // → /api/auth/leaderboard ✅
+          api.get('/profile'),      
+          api.get('/leaderboard')   
         ]);
 
         console.log('Profile:', profileRes.data);
@@ -51,7 +55,10 @@ const Dashboard = () => {
   }, []);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const handleLogout = () => navigate('/login');
+  const handleLogout = () => {
+    localStorage.clear(); // Recommending flushing states on exit profile sessions
+    navigate('/login');
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -59,11 +66,8 @@ const Dashboard = () => {
         return (
           <Profile 
             onProfileUpdate={(updatedName) => {
-              // Update the dashboard states dynamically
               setStudentName(updatedName);
               setUserData(prev => prev ? { ...prev, fullName: updatedName } : null);
-              
-              // Keep localStorage fresh for subsequent page reloads
               localStorage.setItem('studentName', updatedName);
             }} 
           />
@@ -73,12 +77,12 @@ const Dashboard = () => {
       default:
         return (
           <div className="dashboard-grid-container">
+            {/* BALANCE DISPLAY CARD */}
             <div className="card balance-card full-width">
               <div className="balance-info">
                 <p className="label">Your Current Balance</p>
                 <h1 className="points-display">{userData?.points || 0}</h1>
               </div>
-              {/* Functional Navigation Button */}
               <button 
                 className="redeem-btn" 
                 onClick={() => setActiveTab('rewards')}
@@ -88,6 +92,7 @@ const Dashboard = () => {
             </div>
 
             <div className="dashboard-split-row">
+              {/* LEADERBOARD ELEMENT CONTEXT */}
               <div className="card leaderboard-card">
                 <div className="card-header-flex">
                   <div className="header-title">
@@ -108,7 +113,6 @@ const Dashboard = () => {
                       leaderboard.map((user, index) => (
                         <tr key={user._id || index}>
                           <td className="rank-col">#{index + 1}</td>
-                          {/* Update user.firstName/lastName to match what your API returns (e.g. user.name) */}
                           <td className="name-col">{user.fullName}</td>
                           <td className="points-col">{user.totalPointsEarned || 0}</td>
                         </tr>
@@ -122,57 +126,58 @@ const Dashboard = () => {
                 </table>
               </div>
 
-              <div className="card activity-card">
-                <div className="card-header-flex">
-                  <div className="header-title">
-                    <History size={18} color="#800000" />
-                    <h3>Recent Activity</h3>
+              {/* RECENT ACTIVITY CARD (SLICED TO 6 ENTRIES) */}
+              <div className="card activity-card" style={{ padding: '25px', position: 'relative', marginTop: '3px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Clock size={18} color="var(--maroon)" />
+                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--maroon)', fontWeight: 'bold' }}>
+                      Recent Activity
+                    </h3>
                   </div>
+                  {totalHistory.length > 0 && (
+                    <button 
+                      onClick={() => setIsHistoryModalOpen(true)} 
+                      style={{ background: 'none', border: 'none', color: 'var(--maroon)', fontWeight: 'bold', fontSize: '0.88rem', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}
+                      className="view-all-btn"
+                    >
+                      View All
+                    </button>
+                  )}
                 </div>
-                <table className="activity-table">
+
+                <table className="activity-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr>
-                      <th className="action-col">Action</th>
-                      <th className="points-col">Points</th>
-                      <th className="date-col">Date</th>
+                    <tr style={{ color: '#888', fontSize: '0.85rem', textAlign: 'left', borderBottom: '1px solid #eee' }}>
+                      <th style={{ padding: '8px 10px' }}>ACTION</th>
+                      <th style={{ padding: '8px 10px' }}>POINTS</th>
+                      <th style={{ padding: '8px 10px' }}>DATE</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {userData?.history && userData.history.length > 0 ? (
-                      userData.history.map((item, index) => {
-                        
+                    {totalHistory.length > 0 ? (
+                      totalHistory.slice(0, 7).map((item, index) => {
                         const rawPoints = item.points !== undefined ? item.points : 0;
                         const isPositive = rawPoints > 0;
                         const colorClass = isPositive ? 'text-green' : 'text-red';
-                        
-                        // Reverted to your initial text logic matching your screenshot layout
                         const actionText = isPositive ? 'Bottle Collection' : 'Rewards Redemption';
 
                         return (
-                          <tr key={item._id || index} className="activity-main-row" style={{ borderBottom: '1px solid #f5f5f5' }}>
-                            
-                            {/* LEFT COLUMN: ACTION TITLE & THE LIVE BLOCK DESCRIPTION */}
-                            <td className="action-col" style={{ padding: '12px 10px', textAlign: 'left' }}>
-                              <div style={{ fontWeight: '600', color: '#333', fontSize: '0.95rem' }}>{actionText}</div>
-                              
-                              {/* Renders the description string right under the header title */}
+                          <tr key={item._id || index} style={{ borderBottom: '1px solid #f9f9f9' }}>
+                            <td style={{ padding: '12px 10px', textAlign: 'left' }}>
+                              <div style={{ fontWeight: '600', color: '#333', fontSize: '0.92rem' }}>{actionText}</div>
                               {item.description && (
-                                <div className={colorClass} style={{ fontSize: '0.82rem', fontStyle: 'italic', marginTop: '4px' }}>
+                                <div className={colorClass} style={{ fontSize: '0.8rem', fontStyle: 'italic', marginTop: '3px' }}>
                                   {item.description}
                                 </div>
                               )}
                             </td>
-
-                            {/* MIDDLE COLUMN: POINTS VALUE */}
-                            <td className={`points-col ${colorClass}`} style={{ padding: '12px 10px', fontWeight: 'bold', fontSize: '1rem' }}>
+                            <td className={colorClass} style={{ padding: '12px 10px', fontWeight: 'bold' }}>
                               {isPositive ? `+${rawPoints}` : rawPoints}
                             </td>
-
-                            {/* RIGHT COLUMN: CALENDAR DATE */}
-                            <td className="date-col" style={{ padding: '12px 10px', color: '#666', fontSize: '0.9rem' }}>
+                            <td style={{ padding: '12px 10px', color: '#666', fontSize: '0.85rem' }}>
                               {item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}
                             </td>
-
                           </tr>
                         );
                       })
@@ -186,14 +191,80 @@ const Dashboard = () => {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
+            </div> {/* END OF .dashboard-split-row */}
+
+            {/* ALL-TIME LEDGER MODAL POPUP */}
+            {isHistoryModalOpen && (
+              <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+                <div className="modal-content card" style={{ maxWidth: '550px', width: '92%', maxHeight: '80vh', background: '#fff', borderRadius: '12px', padding: '25px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>
+                  <button 
+                    onClick={() => setIsHistoryModalOpen(false)} 
+                    style={{ position: 'absolute', top: '18px', right: '18px', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}
+                  >
+                    <X size={22} />
+                  </button>
+
+                  <div style={{ borderBottom: '2px solid var(--maroon)', paddingBottom: '12px', marginBottom: '15px' }}>
+                    <h3 className="maroon-text" style={{ margin: 0, fontSize: '1.3rem' }}>Account Transaction History</h3>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#666' }}>Full breakdown ledger of all lifetime activities</p>
+                  </div>
+
+                  <div style={{ overflowY: 'auto', flex: 1, paddingRight: '5px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ color: '#888', fontSize: '0.85rem', textAlign: 'left', borderBottom: '1px solid #eee', position: 'sticky', top: 0, background: '#fff' }}>
+                          <th style={{ padding: '8px 5px' }}>ACTION</th>
+                          <th style={{ padding: '8px 5px' }}>POINTS</th>
+                          <th style={{ padding: '8px 5px' }}>DATE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {totalHistory.map((item, index) => {
+                          const rawPoints = item.points !== undefined ? item.points : 0;
+                          const isPositive = rawPoints > 0;
+                          const colorClass = isPositive ? 'text-green' : 'text-red';
+                          const actionText = isPositive ? 'Bottle Collection' : 'Rewards Redemption';
+
+                          return (
+                            <tr key={'modal-' + (item._id || index)} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                              <td style={{ padding: '12px 5px', textAlign: 'left' }}>
+                                <div style={{ fontWeight: '600', color: '#333', fontSize: '0.9rem' }}>{actionText}</div>
+                                {item.description && (
+                                  <div className={colorClass} style={{ fontSize: '0.78rem', fontStyle: 'italic', marginTop: '2px' }}>
+                                    {item.description}
+                                  </div>
+                                )}
+                              </td>
+                              <td className={colorClass} style={{ padding: '12px 5px', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                                {isPositive ? `+${rawPoints}` : rawPoints}
+                              </td>
+                              <td style={{ padding: '12px 5px', color: '#666', fontSize: '0.82rem' }}>
+                                {item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <button 
+                    onClick={() => setIsHistoryModalOpen(false)}
+                    style={{ marginTop: '20px', width: '100%', padding: '10px', background: 'var(--maroon)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    Close Ledger
+                  </button>
+                </div>
+              </div>
+            )}
+          </div> // END OF .dashboard-grid-container
         );
     }
-  }
+  };
 
   return (
     <div className="dashboard-wrapper">
+      {/* SIDEBAR NAVIGATION */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
@@ -233,6 +304,7 @@ const Dashboard = () => {
 
       {isSidebarOpen && <div className="overlay" onClick={toggleSidebar}></div>}
 
+      {/* PRIMARY VIEWS SYSTEM PLATES */}
       <main className="main-content">
         <header className="top-nav">
           <Menu className="hamburger-icon" size={28} onClick={toggleSidebar} />
