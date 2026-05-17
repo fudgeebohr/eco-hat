@@ -29,40 +29,52 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    let scanner = null;
+    let html5Qrcode = null;
+
     if (scanStatus === 'scanning') {
-      // Use a distinct element initialization pattern to avoid duplicate element node binding bugs
-      scanner = new Html5QrcodeScanner("reader", { 
-        fps: 15, // Bumped up slightly for faster frame rate capture paths
-        qrbox: { width: 220, height: 220 }, // Marginally larger tracking boundaries for better phone resolution focus
-        rememberLastUsedCamera: true,
-        supportedScanTypes: [0, 1]
-      });
+      // Create a programmatic camera controller instance linked directly to our target node container
+      html5Qrcode = new Html5Qrcode("reader");
 
-      scanner.render((decodedText) => {
+      const startScanner = async () => {
         try {
-          const parsedData = JSON.parse(decodedText);
-          setScannedData(parsedData);
-          setScanStatus('detected');
-          
-          // Safely shut down scanning processes completely inside the promise loop handler
-          scanner.clear().catch(err => console.error("Scanner clear warning:", err));
-        } catch (err) {
-          alert("Invalid QR structure format detected. Please try re-generating a clean student token code.");
-          // If data fails parsing loops, cleanly kill the session back to idle state parameters safely
-          scanner.clear()
-            .then(() => setScanStatus('idle'))
-            .catch(() => setScanStatus('idle'));
-        }
-      }, (error) => {
-        // Leave verbose debug logging arrays completely empty here to stop console pollution profiles
-      });
-    }
+          await html5Qrcode.start(
+            { facingMode: "environment" }, // Forces the phone's back camera lens
+            {
+              fps: 15,
+              qrbox: { width: 220, height: 220 }
+            },
+            (decodedText) => {
+              try {
+                // Parse the short keys layout coming out of the student device screen
+                const parsedData = JSON.parse(decodedText);
+                
+                setScannedData(parsedData);
+                setScanStatus('detected'); // Shifts UI window over to show Approve/Cancel options
 
-    // Cleaning handler hook ensures that unmounting elements drop active hardware video pipelines instantly
+                // Cleanly kill the camera pipeline track before showing system prompts
+                html5Qrcode.stop().catch(err => console.error("Camera release error:", err));
+              } catch (err) {
+                alert("Invalid QR structure code format. Please try re-generating a clean supply bag token.");
+                html5Qrcode.stop()
+                  .then(() => setScanStatus('idle'))
+                  .catch(() => setScanStatus('idle'));
+              }
+            },
+            (errorMessage) => {
+              // Standard frame scanning loop noise — keep empty to preserve performance tracks
+            }
+          );
+        } catch (err) {
+          console.error("Camera startup error:", err);
+          alert("Could not start camera. Please verify device access permissions are enabled.");
+          setScanStatus('idle');
+        }
+      };
+      startScanner();
+    }
     return () => {
-      if (scanner) {
-        scanner.clear().catch(err => console.error("Failed to clear scanner on unmount phase", err));
+      if (html5Qrcode && html5Qrcode.isScanning) {
+        html5Qrcode.stop().catch(err => console.error("Unmount camera stop error:", err));
       }
     };
   }, [scanStatus]);
@@ -197,26 +209,33 @@ const AdminDashboard = () => {
               <div className="card-header-flex">
                 <h3 className="header-title"><QrCode size={18}/> Redemption Scanner</h3>
               </div>
-              <div className="scanner-container">
+              <div className="scanner-container" style={{ minHeight: '260px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {scanStatus === 'idle' && (
-                  <div className="scanner-placeholder" onClick={() => setScanStatus('scanning')}>
-                    <QrCode size={48} color="var(--gold)" />
-                    <p>TAP TO START SCANNER</p>
+                  <div className="scanner-placeholder" onClick={() => setScanStatus('scanning')} style={{ cursor: 'pointer', textAlign: 'center' }}>
+                    <QrCode size={48} color="var(--gold)" style={{ marginBottom: '10px' }} />
+                    <p style={{ fontWeight: 'bold', fontSize: '13px' }}>TAP TO START SCANNER</p>
                   </div>
                 )}
+                
+                {/* The video element frame track injects inside this node container here */}
                 {scanStatus === 'scanning' && <div id="reader"></div>}
+                
+                {/* APPROVAL CARD INTERACTION INTERFACE */}
                 {scanStatus === 'detected' && (
-                  <div className="scan-result-card">
+                  <div className="scan-result-card" style={{ width: '100%', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
                     <div className="student-info">
-                      <h4 className="maroon-text" style={{ marginBottom: '8px' }}>Claim Package Detected</h4>
-                      <p style={{ margin: '4px 0' }}>Student No: <strong>{scannedData?.studentNum}</strong></p>
-                      <p style={{ margin: '4px 0' }}>Items: <span style={{ color: '#555' }}>{scannedData?.items}</span></p>
-                      <p style={{ margin: '4px 0' }}>Cost: <strong className="maroon-text">{scannedData?.cost} pts</strong></p>
-                      <p style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>Voucher Ref: {scannedData?.qrTokenString}</p>
+                      <h4 className="maroon-text" style={{ margin: '0 0 12px 0', fontSize: '1.1rem', fontWeight: 'bold' }}>Claim Package Detected</h4>
+                      <p style={{ margin: '4px 0', fontSize: '14px' }}>Student No: <strong>{scannedData?.studentNum}</strong></p>
+                      <p style={{ margin: '4px 0', fontSize: '14px' }}>Items: <span style={{ color: '#555' }}>{scannedData?.items}</span></p>
+                      <p style={{ margin: '4px 0', fontSize: '14px' }}>Cost: <strong style={{ color: 'var(--maroon)' }}>{scannedData?.cost} pts</strong></p>
                     </div>
-                    <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                      <button className="action-btn approve" onClick={() => handleRedemption('approve')}>Confirm & Deduct</button>
-                      <button className="action-btn reject" onClick={() => handleRedemption('reject')}>Cancel</button>
+                    <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                      <button className="action-btn approve" onClick={() => handleRedemption('approve')} style={{ flex: 1, padding: '10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        Confirm & Deduct
+                      </button>
+                      <button className="action-btn reject" onClick={() => handleRedemption('reject')} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        Cancel
+                      </button>
                     </div>
                   </div>
                 )}

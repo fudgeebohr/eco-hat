@@ -162,10 +162,21 @@
   overflow: hidden; position: relative;
 }
 
-#reader { border: none !important; width: 100% !important; }
+#reader {
+  border: none !important;
+  width: 100% !important;
+  max-width: 340px;      
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;      
+}
+#reader video, 
 #reader__scan_region video {
-  width: 100% !important; height: 250px !important;
-  object-fit: cover !important; border-radius: 4px;
+  width: 100% !important;
+  height: 250px !important;       
+  object-fit: cover !important;  
+  border-radius: 4px;
 }
 
 /* --- QR SCANNER LIBRARY OVERRIDES --- */
