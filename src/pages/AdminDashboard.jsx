@@ -16,10 +16,13 @@ const AdminDashboard = () => {
   const [adminName, setAdminName] = useState('ADMIN'); 
   const [stats, setStats] = useState({ today: 0, weekly: 0, monthly: 0 });
 
-  // ─── NEW: INVENTORY STOCK STATE MATRIX MANAGERS ─────────────────────────
+  // ─── INVENTORY STOCK STATE MANAGERS ──────────────────────────────────────
   const [inventory, setInventory] = useState([]);
-  const [editingItem, setEditingItem] = useState(null); // Tracks which item row is active inside the modal
+  const [editingItem, setEditingItem] = useState(null); 
   const [inputStockValue, setInputStockValue] = useState(0);
+
+  // ─── NEW: LIVE STUDENT LEADERBOARD STATE ─────────────────────────────────
+  const [leaderboard, setLeaderboard] = useState([]);
 
   const navigate = useNavigate();
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -28,13 +31,14 @@ const AdminDashboard = () => {
     navigate('/admin-login');
   };
 
-  // FETCH ALL INITIAL METRICS & INVENTORY DATA
+  // FETCH ALL INITIAL METRICS, INVENTORY & LEADERBOARD DATA
   const refreshDashboardData = async () => {
     try {
-      const [profileRes, statsRes, inventoryRes] = await Promise.all([
+      const [profileRes, statsRes, inventoryRes, leaderboardRes] = await Promise.all([
         api.get('/admin/profile').catch(() => null),
         api.get('/admin/bottle-stats'),
-        api.get('/admin/inventory')
+        api.get('/admin/inventory'),
+        api.get('/leaderboard') // ◄ Fetches verified campus data
       ]);
 
       if (profileRes?.data?.fullName) {
@@ -46,6 +50,13 @@ const AdminDashboard = () => {
       }
       if (inventoryRes.data?.success) {
         setInventory(inventoryRes.data.inventory);
+      }
+      if (leaderboardRes.data) {
+        // Sort highest-to-lowest defensively right upon receiving the payload
+        const sortedLeaderboard = [...leaderboardRes.data].sort(
+          (a, b) => (b.totalPointsEarned || 0) - (a.totalPointsEarned || 0)
+        );
+        setLeaderboard(sortedLeaderboard);
       }
     } catch (err) {
       console.error("Dashboard engine failed to load sync cycles:", err);
@@ -76,9 +87,8 @@ const AdminDashboard = () => {
       });
 
       if (response.data.success) {
-        // Local structural mutate optimization avoids making unnecessary extra roundtrip gets
         setInventory(prev => prev.map(i => i.id === editingItem.id ? { ...i, stock: Number(inputStockValue) } : i));
-        setEditingItem(null); // Close modal cleanly
+        setEditingItem(null); 
         alert(response.data.message);
       }
     } catch (err) {
@@ -161,7 +171,7 @@ const AdminDashboard = () => {
 
       if (response.data.success) {
         alert(response.data.message);
-        refreshDashboardData(); // Automatically updates the inventory stocks on your UI!
+        refreshDashboardData(); 
       }
     } catch (error) {
       alert(error.response?.data?.message || "An error occurred during verification.");
@@ -231,7 +241,7 @@ const AdminDashboard = () => {
             <div className="dashboard-split-row">
               
               {/* DYNAMIC LIVE INVENTORY CARD LAYOUT */}
-              <div className="admin-card" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+              <div className="admin-card">
                 <div className="card-header-flex">
                   <h3 className="header-title"><Package size={18}/> Inventory Stock</h3>
                 </div>
@@ -254,14 +264,50 @@ const AdminDashboard = () => {
                 </ul>
               </div>
 
+              {/* DYNAMIC LIVE LEADERBOARD CARD LAYOUT */}
               <div className="admin-card">
-                <div className="card-header-flex">
-                  <h3 className="header-title"><Users size={18}/> Leaderboard</h3>
+                <div className="card-header-flex" style={{ borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '15px' }}>
+                  <h3 className="header-title" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold' }}>
+                    <Users size={18} color="var(--maroon)" /> Sustainability Leaderboard
+                  </h3>
                 </div>
-                <div className="empty-activity">
-                  <p>No Student Data Found</p>
+                
+                <div style={{ flex: 1, width: '100%' }}>
+                  <table className="leaderboard-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.92rem' }}>
+                    <thead>
+                      <tr style={{ color: '#888', fontSize: '0.8rem', textAlign: 'left', borderBottom: '1px solid #eee' }}>
+                        <th style={{ padding: '8px 10px', width: '20%' }}>RANK</th>
+                        <th style={{ padding: '8px 10px', width: '55%' }}>NAME</th>
+                        <th style={{ padding: '8px 10px', width: '25%', textAlign: 'right' }}>POINTS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaderboard && leaderboard.length > 0 ? (
+                        leaderboard.map((user, index) => (
+                          <tr style={{ borderBottom: '1px solid #f9f9f9' }}>
+                            <td style={{ padding: '11px 10px', fontWeight: 'bold', color: index === 0 ? 'var(--gold)' : '#555' }}>
+                              #{index + 1}
+                            </td>
+                            <td style={{ padding: '11px 10px', fontWeight: '500', color: '#333' }}>
+                              {user.fullName}
+                            </td>
+                            <td style={{ padding: '11px 10px', fontWeight: 'bold', color: 'var(--maroon)', textAlign: 'right' }}>
+                              {(user.totalPointsEarned || 0).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="3" style={{ textAlign: 'center', padding: '40px 0', color: '#999', fontStyle: 'italic' }}>
+                            No Active Student Data Found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
+
             </div>
 
             {/* Full Width: Transparency Report */}
