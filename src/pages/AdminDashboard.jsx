@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { 
   Menu, X, LayoutDashboard, Package, Users, BarChart3, 
-  Settings, LogOut, Search, Plus, Leaf, Image as ImageIcon, FileText, QrCode, Check, Ban 
+  Settings, LogOut, Search, Plus, Leaf, Image as ImageIcon, FileText, QrCode, Check, Ban, Edit2
 } from 'lucide-react';
 import api from '../api';
 import './AdminDashboard.css';
@@ -13,64 +13,78 @@ const AdminDashboard = () => {
   const [receipts, setReceipts] = useState([]);
   const [scanStatus, setScanStatus] = useState('idle');
   const [scannedData, setScannedData] = useState(null);
-  const [stats, setStats] = useState({ today: 0, weekly: 0, monthly: 0 });
-  
-  // ─── NEW: ADMIN PROFILE IDENTIFICATION STATES ─────────────────────────────
   const [adminName, setAdminName] = useState('ADMIN'); 
-  const navigate = useNavigate();
+  const [stats, setStats] = useState({ today: 0, weekly: 0, monthly: 0 });
 
+  // ─── NEW: INVENTORY STOCK STATE MATRIX MANAGERS ─────────────────────────
+  const [inventory, setInventory] = useState([]);
+  const [editingItem, setEditingItem] = useState(null); // Tracks which item row is active inside the modal
+  const [inputStockValue, setInputStockValue] = useState(0);
+
+  const navigate = useNavigate();
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const handleLogout = () => {
-    localStorage.clear(); // Clears all authentication tokens out cleanly on exit
+    localStorage.clear();
     navigate('/admin-login');
   };
 
-  // ─── NEW: INITIALIZE AND SYNC ACTIVE CREDENTIALS ──────────────────────────
+  // FETCH ALL INITIAL METRICS & INVENTORY DATA
+  const refreshDashboardData = async () => {
+    try {
+      const [profileRes, statsRes, inventoryRes] = await Promise.all([
+        api.get('/admin/profile').catch(() => null),
+        api.get('/admin/bottle-stats'),
+        api.get('/admin/inventory')
+      ]);
+
+      if (profileRes?.data?.fullName) {
+        setAdminName(profileRes.data.fullName);
+        localStorage.setItem('adminName', profileRes.data.fullName);
+      }
+      if (statsRes.data?.success) {
+        setStats({ today: statsRes.data.today, weekly: statsRes.data.weekly, monthly: statsRes.data.monthly });
+      }
+      if (inventoryRes.data?.success) {
+        setInventory(inventoryRes.data.inventory);
+      }
+    } catch (err) {
+      console.error("Dashboard engine failed to load sync cycles:", err);
+    }
+  };
+
   useEffect(() => {
-    // 1. Pull from browser local storage immediately so it populates text fields on mount
     const cachedAdminName = localStorage.getItem('adminName') || localStorage.getItem('username');
-    if (cachedAdminName) {
-      setAdminName(cachedAdminName);
-    }
-
-    // 2. Optional: Fetch the absolute latest verified profile details directly from your cluster
-    const syncAdminProfile = async () => {
-      try {
-        const response = await api.get('/admin/profile'); // Adjust endpoint path if necessary
-        if (response.data && response.data.fullName) {
-          setAdminName(response.data.fullName);
-          localStorage.setItem('adminName', response.data.fullName);
-        }
-      } catch (err) {
-        console.warn("Live admin credential sync bypass:", err.message);
-      }
-    };
+    if (cachedAdminName) setAdminName(cachedAdminName);
 
     if (localStorage.getItem('token')) {
-      syncAdminProfile();
+      refreshDashboardData();
     }
-  }, []);
+  }, [scanStatus]);
 
-  useEffect(() => {
-    const fetchBottleStats = async () => {
-      try {
-        const response = await api.get('/admin/bottle-stats');
-        if (response.data && response.data.success) {
-          setStats({
-            today: response.data.today,
-            weekly: response.data.weekly,
-            monthly: response.data.monthly
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch live bottle collection metrics:", err);
+  // LAUNCH MANAGEMENT MODAL HANDLER
+  const openEditModal = (item) => {
+    setEditingItem(item);
+    setInputStockValue(item.stock);
+  };
+
+  // SAVE REVISED INVENTORY STOCK COUNT VALUES
+  const handleSaveStockUpdate = async () => {
+    try {
+      const response = await api.post('/admin/inventory/update', {
+        id: editingItem.id,
+        newStock: inputStockValue
+      });
+
+      if (response.data.success) {
+        // Local structural mutate optimization avoids making unnecessary extra roundtrip gets
+        setInventory(prev => prev.map(i => i.id === editingItem.id ? { ...i, stock: Number(inputStockValue) } : i));
+        setEditingItem(null); // Close modal cleanly
+        alert(response.data.message);
       }
-    };
-
-    if (localStorage.getItem('token')) {
-      fetchBottleStats();
+    } catch (err) {
+      alert("Failed to sync inventory stock count adjustments.");
     }
-  }, [scanStatus]); // Re-fetches statistics automatically every time a new QR code is verified!
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -100,30 +114,22 @@ const AdminDashboard = () => {
               fps: 20,
               qrbox: { width: qrBoxWidth, height: qrBoxWidth },
               aspectRatio: 1.0,
-              experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-              }
+              experimentalFeatures: { useBarCodeDetectorIfSupported: true }
             },
             (decodedText) => {
               try {
                 const parsedData = JSON.parse(decodedText);
                 setScannedData(parsedData);
                 setScanStatus('detected');
-
                 html5Qrcode.stop().catch(err => console.error("Camera release error:", err));
               } catch (err) {
                 alert("Invalid QR structure code format.");
-                html5Qrcode.stop()
-                  .then(() => setScanStatus('idle'))
-                  .catch(() => setScanStatus('idle'));
+                html5Qrcode.stop().then(() => setScanStatus('idle')).catch(() => setScanStatus('idle'));
               }
             },
-            (errorMessage) => {
-              // Frame scan rejection filtering loops
-            }
+            (errorMessage) => {}
           );
         } catch (err) {
-          console.error("Camera startup error:", err);
           alert("Could not start camera. Please verify device access permissions.");
           setScanStatus('idle');
         }
@@ -155,9 +161,9 @@ const AdminDashboard = () => {
 
       if (response.data.success) {
         alert(response.data.message);
+        refreshDashboardData(); // Automatically updates the inventory stocks on your UI!
       }
     } catch (error) {
-      console.error("Verification processing failed:", error);
       alert(error.response?.data?.message || "An error occurred during verification.");
     } finally {
       setScanStatus('idle');
@@ -194,24 +200,18 @@ const AdminDashboard = () => {
       {isSidebarOpen && <div className="admin-overlay" onClick={toggleSidebar}></div>}
 
       <div className="admin-main">
-        {/* ─── UPDATED: DYNAMIC NAVIGATION HEADER NAVBAR ──────────────────── */}
         <header className="admin-top-nav">
           <Menu className="admin-hamburger" size={28} onClick={toggleSidebar} />
           <div className="user-profile-nav" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-             {/* Character extraction creates an appropriate profile symbol node */}
-             <div className="avatar" style={{ fontWeight: 'bold' }}>
-               {adminName.charAt(0).toUpperCase()}
-             </div>
-             <span style={{ color: 'var(--maroon)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-               {adminName.toUpperCase()}
-             </span>
+             <div className="avatar" style={{ fontWeight: 'bold' }}>{adminName.charAt(0).toUpperCase()}</div>
+             <span style={{ color: 'var(--maroon)', fontWeight: 'bold', letterSpacing: '0.5px' }}>{adminName.toUpperCase()}</span>
           </div>
         </header>
 
         <div className="content-transition-wrapper">
           <div className="admin-content-grid">
             
-            {/* Top Row: Stats (Now fully dynamic) */}
+            {/* Top Row: Stats */}
             <div className="stats-row">
               <div className="stat-card">
                 <p className="label">Bottles Collected Today</p>
@@ -229,14 +229,28 @@ const AdminDashboard = () => {
 
             {/* Split Row: Inventory & Leaderboard */}
             <div className="dashboard-split-row">
-              <div className="admin-card">
+              
+              {/* DYNAMIC LIVE INVENTORY CARD LAYOUT */}
+              <div className="admin-card" style={{ maxHeight: '350px', overflowY: 'auto' }}>
                 <div className="card-header-flex">
                   <h3 className="header-title"><Package size={18}/> Inventory Stock</h3>
                 </div>
                 <ul className="stock-list">
-                  <li><span>Notebook</span> <b>95</b></li>
-                  <li><span>Ballpen</span> <b>98</b></li>
-                  <li><span>Pencil</span> <b>89</b></li>
+                  {inventory.map((item) => (
+                    <li key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f9f9f9' }}>
+                      <span style={{ fontWeight: '500' }}>{item.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <b style={{ minWidth: '30px', textAlign: 'right', fontSize: '1.05rem' }}>{item.stock}</b>
+                        <button 
+                          onClick={() => openEditModal(item)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--maroon)', display: 'flex', alignItems: 'center', padding: '4px' }}
+                          title={`Adjust ${item.name} supply count`}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -304,6 +318,48 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* ─── INVENTORY EDIT CONTROL OVERLAY MODAL INTERFACE ───────────────── */}
+      {editingItem && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
+          <div className="modal-content card" style={{ maxWidth: '400px', width: '90%', background: '#fff', borderRadius: '8px', padding: '24px', position: 'relative', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+            <button 
+              onClick={() => setEditingItem(null)} 
+              style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}
+            >
+              <X size={20} />
+            </button>
+            
+            <h3 style={{ color: 'var(--maroon)', margin: '0 0 10px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>Adjust Inventory Stock</h3>
+            <p style={{ color: '#666', fontSize: '0.88rem', margin: '0 0 20px 0' }}>Item Target: <strong>{editingItem.name}</strong></p>
+            
+            <div style={{ margin: '15px 0' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', color: '#444', marginBottom: '6px', textTransform: 'uppercase' }}>Current Stock Quantity</label>
+              <input 
+                type="number" 
+                value={inputStockValue} 
+                onChange={(e) => setInputStockValue(Math.max(0, parseInt(e.target.value) || 0))}
+                style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '25px' }}>
+              <button 
+                onClick={handleSaveStockUpdate}
+                style={{ flex: 1, padding: '12px', background: 'var(--maroon)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                Save Changes
+              </button>
+              <button 
+                onClick={() => setEditingItem(null)}
+                style={{ flex: 1, padding: '12px', background: '#f5f5f5', color: '#333', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

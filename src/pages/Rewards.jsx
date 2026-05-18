@@ -18,25 +18,63 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
   const [checkoutSummary, setCheckoutSummary] = useState('');
   const [checkoutCost, setCheckoutCost] = useState(0);
 
-  // 1. Fetch the cloud cart array on component mounting sessions
+  // ─── NEW: LIVE DATABASE REWARDS STOCK STATE ──────────────────────────────
+  const [rewardItems, setRewardItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Map icons dynamically to item names since MongoDB doesn't store JSX icons
+  const getRewardIcon = (name) => {
+    switch (name) {
+      case 'Notebook': return <Book size={48} />;
+      case 'Ballpen': return <PenTool size={48} />;
+      case 'Pencil': return <Pencil size={48} />;
+      case 'Yellow Paper': return <FileText size={48} />;
+      case 'Scissors': return <Scissors size={48} />;
+      case 'Crayons': return <Highlighter size={48} />;
+      case 'Ruler': return <Ruler size={48} />;
+      case 'Eraser': return <Eraser size={48} />;
+      case 'Folder': return <Layers size={48} />;
+      case 'Correction Tape': return <ClipboardList size={48} />;
+      default: return <Book size={48} />;
+    }
+  };
+
+  // 1. Fetch live stock values alongside user cloud cart on mount
   useEffect(() => {
-    const fetchCloudCart = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await api.get('/profile');
-        if (response.data) {
-          if (response.data.cart) setCart(response.data.cart);
-          if (response.data.studentNumber) setStudentNumber(response.data.studentNumber);
+        setLoading(true);
+        // Execute profile and public catalog syncs simultaneously
+        const [profileRes, inventoryRes] = await Promise.all([
+          api.get('/profile'),
+          api.get('/rewards/inventory') // ◄ Hit the public student read endpoint we made
+        ]);
+
+        if (profileRes.data) {
+          if (profileRes.data.cart) setCart(profileRes.data.cart);
+          if (profileRes.data.studentNumber) setStudentNumber(profileRes.data.studentNumber);
+        }
+
+        if (inventoryRes.data?.success) {
+          // Attach JSX icons to data array records
+          const parsedItems = inventoryRes.data.inventory.map(item => ({
+            ...item,
+            icon: getRewardIcon(item.name)
+          }));
+          setRewardItems(parsedItems);
         }
       } catch (error) {
-        console.error("Failed to recover multi-device cart configurations:", error);
+        console.error("Initialization Sync Broken:", error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchCloudCart();
-  }, []);
+    
+    fetchInitialData();
+  }, [generatedQr]); // Re-fetch to update local stock limits when a checkout completes!
 
   // 2. Automatically push mutations up to your MongoDB cluster
   useEffect(() => {
-    // Prevent executing an API post request if the user hasn't completed baseline mount loading checks
     if (cart.length === 0) return;
 
     const syncCartToCloud = async () => {
@@ -47,7 +85,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
       }
     };
 
-    // Setting up a minor timeout debounce stops your application from spamming requests while clicking quantity buttons
     const delayDebounce = setTimeout(() => {
       syncCartToCloud();
     }, 500);
@@ -59,16 +96,18 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
   const totalCartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalCartCost = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalCost = selectedItem ? selectedItem.price * quantity : 0;
+  
+  // ─── UPDATED BOUNDARIES: STOCK CONSTRAINT VALIDATION ──────────────────────
   const canAfford = userPoints >= totalCost;
+  const isStockAvailable = selectedItem ? selectedItem.stock >= quantity : true;
 
   const addToCart = (item, selectedQty) => {
     setCart(prevCart => {
-      // Look for itemId tracking variables returning from our schema model
       const existingItem = prevCart.find(cartItem => cartItem.itemId === item.id);
       if (existingItem) {
         return prevCart.map(cartItem =>
           cartItem.itemId === item.id 
-            ? { ...cartItem, quantity: cartItem.quantity + selectedQty } 
+            ? { ...cartItem, quantity: Math.min(item.stock, cartItem.quantity + selectedQty) } 
             : cartItem
         );
       }
@@ -77,12 +116,15 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
     setSelectedItem(null);
   };
 
-  // Inline adjustment inside the side panel modal
   const updateQuantity = (itemId, amount) => {
+    // Find item stock reference boundary
+    const referenceItem = rewardItems.find(r => r.id === itemId);
+    const maxStock = referenceItem ? referenceItem.stock : 99;
+
     setCart(prevCart => prevCart.map(item => {
       if (item.itemId === itemId) {
         const newQty = item.quantity + amount;
-        return newQty > 0 ? { ...item, quantity: newQty } : item;
+        return newQty > 0 ? { ...item, quantity: Math.min(maxStock, newQty) } : item;
       }
       return item;
     }).filter(item => item.quantity > 0));
@@ -92,9 +134,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
     setCart(prevCart => prevCart.filter(item => item.itemId !== itemId));
   };
 
-  const closeModal = () => {
-    setSelectedItem(null);
-  };
+  const closeModal = () => setSelectedItem(null);
 
   const handleCheckoutCart = async () => {
     if (cart.length === 0) return alert("Your cart is empty!");
@@ -105,7 +145,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
     try {
       const payload = {
         items: cart.map(item => ({
-          itemId: item.id,
+          itemId: item.itemId, // Fix item mapping reference error 
           name: item.name,
           quantity: item.quantity,
           pointsDeducted: item.price * item.quantity
@@ -118,7 +158,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
       if (response.data.success) {
         const summaryText = cart.map(i => `${i.quantity}x ${i.name}`).join(', ');
         setCheckoutSummary(summaryText);
-        // Capture the final cost right before clearing the cart array
         setCheckoutCost(totalCartCost); 
 
         setGeneratedQr(response.data.qrTokenString); 
@@ -132,18 +171,9 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
     }
   };
 
-  const rewardItems = [
-    { id: 1, name: 'Notebook', price: 50, icon: <Book size={48} />, stock: 95 },
-    { id: 2, name: 'Ballpen', price: 20, icon: <PenTool size={48} />, stock: 98 },
-    { id: 3, name: 'Pencil', price: 15, icon: <Pencil size={48} />, stock: 89 },
-    { id: 4, name: 'Yellow Paper', price: 40, icon: <FileText size={48} />, stock: 50 },
-    { id: 5, name: 'Scissors', price: 60, icon: <Scissors size={48} />, stock: 30 },
-    { id: 6, name: 'Crayons', price: 80, icon: <Highlighter size={48} />, stock: 25 },
-    { id: 7, name: 'Ruler', price: 25, icon: <Ruler size={48} />, stock: 40 },
-    { id: 8, name: 'Eraser', price: 10, icon: <Eraser size={48} />, stock: 120 },
-    { id: 9, name: 'Folder', price: 15, icon: <Layers size={48} />, stock: 200 },
-    { id: 10, name: 'Correction Tape', price: 45, icon: <ClipboardList size={48} />, stock: 15 },
-  ];
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', padding: '50px', color: 'var(--maroon)', fontWeight: 'bold' }}>Loading campus rewards catalog...</div>;
+  }
 
   return (
     <div className="rewards-container">
@@ -176,16 +206,26 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
 
       </div>
 
-      {/* --- REWARDS GRID (FULL WIDTH) --- */}
+      {/* --- REWARDS GRID (NOW EXTRACTING LIVE MONGODB DATA) --- */}
       <div className="rewards-grid-full">
         {rewardItems.map((item) => (
-          <div key={item.id} className="reward-item-card">
+          <div key={item.id} className="reward-item-card" style={{ opacity: item.stock === 0 ? 0.6 : 1 }}>
             <div className="reward-icon-wrapper">{item.icon}</div>
             <h3 className="item-name">{item.name}</h3>
             <p className="item-price">{item.price} pts</p>
-            <p className="item-stock">Stock: {item.stock}</p>
-            <button className="redeem-action-btn" onClick={() => { setSelectedItem(item); setQuantity(1); }}>
-              Add to Bag
+            
+            {/* DYNAMIC STOCK TEXT SHADING */}
+            <p className="item-stock" style={{ color: item.stock === 0 ? '#dc2626' : '#666', fontWeight: item.stock === 0 ? 'bold' : 'normal' }}>
+              {item.stock > 0 ? `Stock: ${item.stock}` : 'OUT OF STOCK'}
+            </p>
+            
+            <button 
+              className="redeem-action-btn" 
+              onClick={() => { setSelectedItem(item); setQuantity(1); }}
+              disabled={item.stock === 0}
+              style={{ background: item.stock === 0 ? '#ccc' : 'var(--maroon)', cursor: item.stock === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              {item.stock > 0 ? 'Add to Bag' : 'Unavailable'}
             </button>
           </div>
         ))}
@@ -212,7 +252,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                   <>
                     <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '20px' }}>
                       {cart.map(item => (
-                        // 1. UPDATED: Changed item.id to item.itemId
                         <div key={item.itemId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
                           <div>
                             <p style={{ fontWeight: '600', margin: 0 }}>{item.name}</p>
@@ -241,16 +280,15 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
               </>
             ) : (
               /* --- BATCH REDEMPTION QR VIEW --- */
-              <div className="modal-content qr-view"> {/* ◄ ADDED class "qr-view" here */}
+              <div className="modal-content qr-view">
                 <h3 className="maroon-text" style={{ marginBottom: '5px' }}>Redemption QR Code</h3>
                 <p className="subtitle" style={{ marginBottom: '20px' }}>Scan this single-use token at the kiosk</p>
                 
-                {/* REMOVED inline display:flex style and replaced it with your clean CSS wrapper class */}
-                <div className="qr-wrapper"> {/* ◄ ADDED class "qr-wrapper" here */}
+                <div className="qr-wrapper">
                   <QRCodeSVG value={JSON.stringify({
                     token: generatedQr,
                     studentNum: studentNumber || localStorage.getItem('studentNumber') || 'Unknown', 
-                    cost: checkoutCost, // ◄ Uses the locked, static state value
+                    cost: checkoutCost, 
                     items: checkoutSummary
                   })} size={220} fgColor="#800000" level="M" />
                 </div>
@@ -280,11 +318,12 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
               </div>
 
               <div className="quantity-selector" style={{ margin: '20px 0' }}>
-                <p className="label">Select Quantity</p>
+                <p className="label">Select Quantity (Max Available: {selectedItem.stock})</p>
                 <div className="qty-controls">
                   <button onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus size={18}/></button>
                   <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{quantity}</span>
-                  <button onClick={() => setQuantity(quantity + 1)}><Plus size={18}/></button>
+                  {/* Lock the plus button incrementer to current live stock availability limits */}
+                  <button onClick={() => setQuantity(Math.min(selectedItem.stock, quantity + 1))} disabled={quantity >= selectedItem.stock}><Plus size={18}/></button>
                 </div>
               </div>
 
@@ -296,9 +335,12 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                 {!canAfford && (
                   <p className="error-msg" style={{ margin: '8px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px', color: '#dc2626', fontSize: '13px' }}><AlertCircle size={14}/> Insufficient points balance</p>
                 )}
+                {!isStockAvailable && (
+                  <p className="error-msg" style={{ margin: '8px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px', color: '#dc2626', fontSize: '13px' }}><AlertCircle size={14}/> Selected quantity exceeds current available inventory</p>
+                )}
               </div>
 
-              <button className="modal-save-btn" disabled={!canAfford} onClick={() => addToCart(selectedItem, quantity)} style={{ width: '100%' }}>
+              <button className="modal-save-btn" disabled={!canAfford || !isStockAvailable || selectedItem.stock === 0} onClick={() => addToCart(selectedItem, quantity)} style={{ width: '100%' }}>
                 Confirm to Bag
               </button>
             </div>
