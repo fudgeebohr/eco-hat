@@ -81,13 +81,16 @@ const AdminDashboard = () => {
   // SAVE REVISED INVENTORY STOCK COUNT VALUES
   const handleSaveStockUpdate = async () => {
     try {
+      // Force conversion to a real number right before pushing to Render API
+      const finalStockValue = inputStockValue === '' ? 0 : Number(inputStockValue);
+
       const response = await api.post('/admin/inventory/update', {
         id: editingItem.id,
-        newStock: inputStockValue
+        newStock: finalStockValue
       });
 
       if (response.data.success) {
-        setInventory(prev => prev.map(i => i.id === editingItem.id ? { ...i, stock: Number(inputStockValue) } : i));
+        setInventory(prev => prev.map(i => i.id === editingItem.id ? { ...i, stock: finalStockValue } : i));
         setEditingItem(null); 
         alert(response.data.message);
       }
@@ -380,11 +383,22 @@ const AdminDashboard = () => {
             <p style={{ color: '#666', fontSize: '0.88rem', margin: '0 0 20px 0' }}>Item Target: <strong>{editingItem.name}</strong></p>
             
             <div style={{ margin: '15px 0' }}>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', color: '#444', marginBottom: '6px', textTransform: 'uppercase' }}>Current Stock Quantity</label>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', color: '#444', marginBottom: '6px', textTransform: 'uppercase' }}>
+                Current Stock Quantity
+              </label>
               <input 
                 type="number" 
                 value={inputStockValue} 
-                onChange={(e) => setInputStockValue(Math.max(0, parseInt(e.target.value) || 0))}
+                
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setInputStockValue(''); // Keeps field perfectly empty while typing
+                  } else {
+                    const parsed = parseInt(val, 10);
+                    setInputStockValue(parsed >= 0 ? parsed : 0); // Stops negative entries safely
+                  }
+                }}
                 style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
