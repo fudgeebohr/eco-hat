@@ -13,10 +13,64 @@ const AdminDashboard = () => {
   const [receipts, setReceipts] = useState([]);
   const [scanStatus, setScanStatus] = useState('idle');
   const [scannedData, setScannedData] = useState(null);
+  const [stats, setStats] = useState({ today: 0, weekly: 0, monthly: 0 });
+  
+  // ─── NEW: ADMIN PROFILE IDENTIFICATION STATES ─────────────────────────────
+  const [adminName, setAdminName] = useState('ADMIN'); 
   const navigate = useNavigate();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const handleLogout = () => navigate('/admin-login');
+  const handleLogout = () => {
+    localStorage.clear(); // Clears all authentication tokens out cleanly on exit
+    navigate('/admin-login');
+  };
+
+  // ─── NEW: INITIALIZE AND SYNC ACTIVE CREDENTIALS ──────────────────────────
+  useEffect(() => {
+    // 1. Pull from browser local storage immediately so it populates text fields on mount
+    const cachedAdminName = localStorage.getItem('adminName') || localStorage.getItem('username');
+    if (cachedAdminName) {
+      setAdminName(cachedAdminName);
+    }
+
+    // 2. Optional: Fetch the absolute latest verified profile details directly from your cluster
+    const syncAdminProfile = async () => {
+      try {
+        const response = await api.get('/admin/profile'); // Adjust endpoint path if necessary
+        if (response.data && response.data.fullName) {
+          setAdminName(response.data.fullName);
+          localStorage.setItem('adminName', response.data.fullName);
+        }
+      } catch (err) {
+        console.warn("Live admin credential sync bypass:", err.message);
+      }
+    };
+
+    if (localStorage.getItem('token')) {
+      syncAdminProfile();
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchBottleStats = async () => {
+      try {
+        const response = await api.get('/admin/bottle-stats');
+        if (response.data && response.data.success) {
+          setStats({
+            today: response.data.today,
+            weekly: response.data.weekly,
+            monthly: response.data.monthly
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch live bottle collection metrics:", err);
+      }
+    };
+
+    if (localStorage.getItem('token')) {
+      fetchBottleStats();
+    }
+  }, [scanStatus]); // Re-fetches statistics automatically every time a new QR code is verified!
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -33,23 +87,21 @@ const AdminDashboard = () => {
     let html5Qrcode = null;
 
     if (scanStatus === 'scanning') {
-      // Create a programmatic camera controller instance linked directly to our target node container
       html5Qrcode = new Html5Qrcode("reader");
 
       const startScanner = async () => {
         try {
-          // 1. CALCULATE RESPONSIVE BOX SIZE (Wider view bounding box for phones)
           const isMobile = window.innerWidth <= 550;
-          const qrBoxWidth = isMobile ? 260 : 220; // Opens up the frame grid on mobile screens
+          const qrBoxWidth = isMobile ? 260 : 220;
 
           await html5Qrcode.start(
-            { facingMode: "environment" }, // Focuses back camera lens array
+            { facingMode: "environment" },
             {
-              fps: 20, // Snappier frame scanning sampling limits
+              fps: 20,
               qrbox: { width: qrBoxWidth, height: qrBoxWidth },
-              aspectRatio: 1.0, // Hard locks a square dimension framework
+              aspectRatio: 1.0,
               experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true // ◄ CRITICAL: Leverages native mobile GPU decoding
+                useBarCodeDetectorIfSupported: true
               }
             },
             (decodedText) => {
@@ -67,7 +119,7 @@ const AdminDashboard = () => {
               }
             },
             (errorMessage) => {
-              // Frame track tracking loop drop pass filtering
+              // Frame scan rejection filtering loops
             }
           );
         } catch (err) {
@@ -94,12 +146,11 @@ const AdminDashboard = () => {
     }
 
     try {
-      // Map the minified keys back to your backend expectations
       const response = await api.post('/admin/verify-redemption', {
-        qrTokenString: scannedData.token,      // 'token' from student QR
-        studentNumber: scannedData.studentNum, // 'studentNum' from student QR
-        totalCost: scannedData.cost,           // 'cost' from student QR
-        summary: scannedData.items             // 'items' from student QR
+        qrTokenString: scannedData.token,      
+        studentNumber: scannedData.studentNum, 
+        totalCost: scannedData.cost,           
+        summary: scannedData.items             
       });
 
       if (response.data.success) {
@@ -143,31 +194,36 @@ const AdminDashboard = () => {
       {isSidebarOpen && <div className="admin-overlay" onClick={toggleSidebar}></div>}
 
       <div className="admin-main">
+        {/* ─── UPDATED: DYNAMIC NAVIGATION HEADER NAVBAR ──────────────────── */}
         <header className="admin-top-nav">
           <Menu className="admin-hamburger" size={28} onClick={toggleSidebar} />
-          <div className="user-profile-nav">
-             <div className="avatar">A</div>
-             <span>ECO-HAT ADMIN</span>
+          <div className="user-profile-nav" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+             {/* Character extraction creates an appropriate profile symbol node */}
+             <div className="avatar" style={{ fontWeight: 'bold' }}>
+               {adminName.charAt(0).toUpperCase()}
+             </div>
+             <span style={{ color: 'var(--maroon)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+               {adminName.toUpperCase()}
+             </span>
           </div>
         </header>
 
-        {/* --- MAX-WIDTH WRAPPER --- */}
         <div className="content-transition-wrapper">
           <div className="admin-content-grid">
             
-            {/* Top Row: Stats */}
+            {/* Top Row: Stats (Now fully dynamic) */}
             <div className="stats-row">
               <div className="stat-card">
                 <p className="label">Bottles Collected Today</p>
-                <h1 className="stat-val maroon-text">70</h1>
+                <h1 className="stat-val maroon-text">{stats.today.toLocaleString()}</h1>
               </div>
               <div className="stat-card">
                 <p className="label">Weekly Performance</p>
-                <h1 className="stat-val maroon-text">239</h1>
+                <h1 className="stat-val maroon-text">{stats.weekly.toLocaleString()}</h1>
               </div>
               <div className="stat-card">
                 <p className="label">Total Monthly Intake</p>
-                <h1 className="stat-val maroon-text">1,402</h1>
+                <h1 className="stat-val maroon-text">{stats.monthly.toLocaleString()}</h1>
               </div>
             </div>
 
@@ -223,10 +279,8 @@ const AdminDashboard = () => {
                   </div>
                 )}
                 
-                {/* The video element frame track injects inside this node container here */}
                 {scanStatus === 'scanning' && <div id="reader"></div>}
                 
-                {/* APPROVAL CARD INTERACTION INTERFACE */}
                 {scanStatus === 'detected' && (
                   <div className="scan-result-card" style={{ width: '100%', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
                     <div className="student-info">
