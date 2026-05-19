@@ -21,8 +21,17 @@ const AdminDashboard = () => {
   const [editingItem, setEditingItem] = useState(null); 
   const [inputStockValue, setInputStockValue] = useState(0);
 
-  // ─── NEW: LIVE STUDENT LEADERBOARD STATE ─────────────────────────────────
+  // ─── LIVE STUDENT LEADERBOARD STATE ──────────────────────────────────────
   const [leaderboard, setLeaderboard] = useState([]);
+
+  // ─── NEW: TRANSPARENCY REPORT SYSTEM STATES ──────────────────────────────
+  const [transparencyLogs, setTransparencyLogs] = useState([]);
+  const [inputAmount, setInputAmount] = useState('');
+  const [inputDesc, setInputDesc] = useState('');
+  const [selectedReceiptFile, setSelectedReceiptFile] = useState(null); // Stores raw Base64 data strings
+  const [receiptFileName, setReceiptFileName] = useState('');
+  const [isTransparencyModalOpen, setIsTransparencyModalOpen] = useState(false); // Handles global history popups
+  const [activeReceiptPreviewUrl, setActiveReceiptPreviewUrl] = useState(null); // Lightbox preview modal controller
 
   const navigate = useNavigate();
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -31,14 +40,15 @@ const AdminDashboard = () => {
     navigate('/admin-login');
   };
 
-  // FETCH ALL INITIAL METRICS, INVENTORY & LEADERBOARD DATA
+  // FETCH ALL INITIAL METRICS, INVENTORY, LEADERBOARD & TRANSPARENCY DATA
   const refreshDashboardData = async () => {
     try {
-      const [profileRes, statsRes, inventoryRes, leaderboardRes] = await Promise.all([
+      const [profileRes, statsRes, inventoryRes, leaderboardRes, logsRes] = await Promise.all([
         api.get('/admin/profile').catch(() => null),
         api.get('/admin/bottle-stats'),
         api.get('/admin/inventory'),
-        api.get('/leaderboard') // ◄ Fetches verified campus data
+        api.get('/leaderboard'),
+        api.get('/admin/transparency-logs') // ◄ NEW: Pulls down shared ledger records
       ]);
 
       if (profileRes?.data?.fullName) {
@@ -52,11 +62,13 @@ const AdminDashboard = () => {
         setInventory(inventoryRes.data.inventory);
       }
       if (leaderboardRes.data) {
-        // Sort highest-to-lowest defensively right upon receiving the payload
         const sortedLeaderboard = [...leaderboardRes.data].sort(
           (a, b) => (b.totalPointsEarned || 0) - (a.totalPointsEarned || 0)
         );
         setLeaderboard(sortedLeaderboard);
+      }
+      if (logsRes.data?.success) {
+        setTransparencyLogs(logsRes.data.logs);
       }
     } catch (err) {
       console.error("Dashboard engine failed to load sync cycles:", err);
@@ -81,7 +93,6 @@ const AdminDashboard = () => {
   // SAVE REVISED INVENTORY STOCK COUNT VALUES
   const handleSaveStockUpdate = async () => {
     try {
-      // Force conversion to a real number right before pushing to Render API
       const finalStockValue = inputStockValue === '' ? 0 : Number(inputStockValue);
 
       const response = await api.post('/admin/inventory/update', {
@@ -99,12 +110,41 @@ const AdminDashboard = () => {
     }
   };
 
+  // NEW: HANDLE SUBMISSION LOG ENTRIES UP TO CLOUD ROUTERS
+  const handleLogTransactionSubmit = async () => {
+    if (!inputAmount || !inputDesc) {
+      return alert("Please specify both an entry amount and transaction description details.");
+    }
+
+    try {
+      const response = await api.post('/admin/transparency-logs/add', {
+        amount: inputAmount,
+        description: inputDesc,
+        receiptUrl: selectedReceiptFile,
+        loggedBy: adminName
+      });
+
+      if (response.data.success) {
+        alert(response.data.message);
+        setInputAmount('');
+        setInputDesc('');
+        setSelectedReceiptFile(null);
+        setReceiptFileName('');
+        refreshDashboardData(); // Instantly synchronizes view listings across all active admin computers!
+      }
+    } catch (err) {
+      alert("Failed to record transaction log entry parameters.");
+    }
+  };
+
+  // UPDATED: ENHANCED BASE64 IMAGE PARSER READ CHANNELS
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setReceiptFileName(file.name);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setReceipts([...receipts, { url: reader.result, name: file.name }]);
+        setSelectedReceiptFile(reader.result); // Locks string value safely into state memory cache
       };
       reader.readAsDataURL(file);
     }
@@ -287,7 +327,7 @@ const AdminDashboard = () => {
                     <tbody>
                       {leaderboard && leaderboard.length > 0 ? (
                         leaderboard.map((user, index) => (
-                          <tr style={{ borderBottom: '1px solid #f9f9f9' }}>
+                          <tr key={user._id || index} style={{ borderBottom: '1px solid #f9f9f9' }}>
                             <td style={{ padding: '11px 10px', fontWeight: 'bold', color: index === 0 ? 'var(--gold)' : '#555' }}>
                               #{index + 1}
                             </td>
@@ -313,20 +353,72 @@ const AdminDashboard = () => {
 
             </div>
 
-            {/* Full Width: Transparency Report */}
+            {/* ==========================================
+               FULL WIDTH: TRANSPARENCY REPORT CARD (LIVE CONSOLE VIEW)
+               ========================================== */}
             <div className="admin-card">
-              <div className="card-header-flex">
-                <h3 className="header-title"><FileText size={18}/> Transparency Report</h3>
+              <div className="card-header-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 className="header-title" style={{ margin: 0 }}><FileText size={18}/> Transparency Report</h3>
+                {transparencyLogs.length > 0 && (
+                  <button 
+                    onClick={() => setIsTransparencyModalOpen(true)}
+                    style={{ background: 'none', border: 'none', color: 'var(--maroon)', fontWeight: 'bold', fontSize: '0.88rem', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}
+                  >
+                    View All
+                  </button>
+                )}
               </div>
+              
               <div className="transaction-form">
-                <input type="number" placeholder="Amount (₱)" />
-                <input type="text" placeholder="Transaction Description" />
-                <label className="upload-label">
-                  <ImageIcon size={18}/> Add Receipt
+                <input 
+                  type="number" 
+                  placeholder="Amount (₱)" 
+                  value={inputAmount}
+                  onChange={(e) => setInputAmount(e.target.value)}
+                />
+                <input 
+                  type="text" 
+                  placeholder="Transaction Description" 
+                  value={inputDesc}
+                  onChange={(e) => setInputDesc(e.target.value)}
+                />
+                <label className="upload-label" style={{ cursor: 'pointer' }}>
+                  <ImageIcon size={18}/> {receiptFileName ? `${receiptFileName.slice(0, 12)}...` : 'Add Receipt'}
                   <input type="file" hidden onChange={handleFileChange} accept="image/*" />
                 </label>
-                <button className="log-btn-primary log-btn">Log Entry</button>
+                <button className="log-btn-primary log-btn" onClick={handleLogTransactionSubmit}>Log Entry</button>
               </div>
+
+              {/* RECENT RECORDS ARCHIVE COMPACT MATRIX (LATEST 3 LOGS) */}
+              {transparencyLogs.length > 0 && (
+                <div style={{ marginTop: '25px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+                  <h4 style={{ fontSize: '0.82rem', color: '#777', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', fontWeight: 'bold' }}>Latest Log Entries</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {transparencyLogs.slice(0, 3).map((log, i) => (
+                      <div key={log._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fcfcfc', border: '1px solid #f0f0f0', padding: '12px 15px', borderRadius: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1 }}>
+                          {log.receiptUrl ? (
+                            <img 
+                              src={log.receiptUrl} 
+                              alt="Receipt thumbnail" 
+                              onClick={() => setActiveReceiptPreviewUrl(log.receiptUrl)}
+                              style={{ width: '42px', height: '42px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #ddd', cursor: 'pointer' }}
+                              title="Click to zoom receipt document image"
+                            />
+                          ) : (
+                            <div style={{ width: '42px', height: '42px', borderRadius: '4px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '9px', fontWeight: 'bold', border: '1px dashed #ddd' }}>N/A</div>
+                          )}
+                          <div>
+                            <p style={{ margin: 0, fontWeight: '600', color: '#333', fontSize: '0.92rem' }}>{log.description}</p>
+                            <span style={{ fontSize: '0.78rem', color: '#777' }}>By {log.loggedBy || 'Admin'} • {new Date(log.date).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <strong style={{ color: 'var(--maroon)', fontSize: '1.05rem' }}>₱{log.amount.toLocaleString()}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Compact: Redemption Scanner */}
@@ -383,20 +475,17 @@ const AdminDashboard = () => {
             <p style={{ color: '#666', fontSize: '0.88rem', margin: '0 0 20px 0' }}>Item Target: <strong>{editingItem.name}</strong></p>
             
             <div style={{ margin: '15px 0' }}>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', color: '#444', marginBottom: '6px', textTransform: 'uppercase' }}>
-                Current Stock Quantity
-              </label>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', color: '#444', marginBottom: '6px', textTransform: 'uppercase' }}>Current Stock Quantity</label>
               <input 
                 type="number" 
                 value={inputStockValue} 
-                
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val === '') {
-                    setInputStockValue(''); // Keeps field perfectly empty while typing
+                    setInputStockValue(''); 
                   } else {
                     const parsed = parseInt(val, 10);
-                    setInputStockValue(parsed >= 0 ? parsed : 0); // Stops negative entries safely
+                    setInputStockValue(parsed >= 0 ? parsed : 0); 
                   }
                 }}
                 style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }}
@@ -417,6 +506,64 @@ const AdminDashboard = () => {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── NEW: ALL-TIME TRANSPARENCY EXPENSE LEDGER POPUP MODAL ───────────── */}
+      {isTransparencyModalOpen && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000 }}>
+          <div className="modal-content card" style={{ maxWidth: '600px', width: '92%', maxHeight: '80vh', background: '#fff', borderRadius: '12px', padding: '25px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>
+            <button onClick={() => setIsTransparencyModalOpen(false)} style={{ position: 'absolute', top: '18px', right: '18px', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}><X size={22}/></button>
+            
+            <div style={{ borderBottom: '2px solid var(--maroon)', paddingBottom: '12px', marginBottom: '15px' }}>
+              <h3 className="maroon-text" style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold' }}>Global Expense Ledger Reports</h3>
+              <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#666' }}>Comprehensive breakdown auditing verified across all administrators</p>
+            </div>
+            
+            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '5px' }}>
+              {transparencyLogs.map((log, i) => (
+                <div key={'modal-log-' + (log._id || i)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fdfdfd', border: '1px solid #eee', padding: '12px 15px', borderRadius: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {log.receiptUrl ? (
+                      <img 
+                        src={log.receiptUrl} 
+                        alt="Receipt Link" 
+                        onClick={() => setActiveReceiptPreviewUrl(log.receiptUrl)}
+                        style={{ width: '38px', height: '38px', borderRadius: '4px', objectFit: 'cover', cursor: 'pointer', border: '1px solid #ccc' }}
+                      />
+                    ) : (
+                      <div style={{ width: '38px', height: '38px', borderRadius: '4px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: '9px', fontWeight: 'bold', border: '1px dashed #eee' }}>N/A</div>
+                    )}
+                    <div>
+                      <p style={{ margin: 0, fontWeight: '600', color: '#333', fontSize: '0.88rem' }}>{log.description}</p>
+                      <span style={{ fontSize: '0.75rem', color: '#888' }}>Logged by: {log.loggedBy} • {new Date(log.date).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <strong style={{ color: 'var(--maroon)', fontSize: '1rem' }}>₱{log.amount.toLocaleString()}</strong>
+                </div>
+              ))}
+            </div>
+            <button className="log-btn-primary log-btn" onClick={() => setIsTransparencyModalOpen(false)} style={{ marginTop: '20px', width: '100%', padding: '12px' }}>Close Ledger View</button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── NEW: RECEIPT DOCUMENT LIGHTBOX POPUP MAXIMIZATION LIGHTBOX ──────── */}
+      {activeReceiptPreviewUrl && (
+        <div className="modal-overlay" onClick={() => setActiveReceiptPreviewUrl(null)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 4000, backdropFilter: 'blur(6px)' }}>
+          <div style={{ position: 'relative', maxWidth: '85vw', maxHeight: '85vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setActiveReceiptPreviewUrl(null)} 
+              style={{ position: 'absolute', top: '-40px', right: '0', background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <X size={20} /> Close Preview
+            </button>
+            <img 
+              src={activeReceiptPreviewUrl} 
+              alt="Receipt Maximized Layout View" 
+              style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px', boxShadow: '0 12px 35px rgba(0,0,0,0.6)', objectFit: 'contain', background: '#fff', padding: '8px' }} 
+            />
           </div>
         </div>
       )}
