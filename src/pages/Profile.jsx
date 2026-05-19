@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Award, ShieldCheck, MapPin, Edit3, Settings, X, Ban } from 'lucide-react';
+import { User, Mail, Award, ShieldCheck, MapPin, Edit3, Settings, X, Ban, FileText } from 'lucide-react';
 import './Profile.css';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -7,7 +7,6 @@ import api from '../api';
 const Profile = ({ onProfileUpdate }) => {
   const navigate = useNavigate();
   
-  // 1. Replaced the hardcoded object with React state
   const [userData, setUserData] = useState({
     fullName: "Loading...",
     programAndYear: "Loading...",
@@ -25,15 +24,17 @@ const Profile = ({ onProfileUpdate }) => {
     studentNumber: ""
   });
 
-  // 2. Inserted the useEffect block to fetch from the database
+  // ─── NEW: TRANSPARENCY REPORT FOR STUDENTS STATES ───────────────────────
+  const [transparencyLogs, setTransparencyLogs] = useState([]);
+  const [isTransparencyModalOpen, setIsTransparencyModalOpen] = useState(false);
+  const [activeReceiptPreviewUrl, setActiveReceiptPreviewUrl] = useState(null);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // Replace '/api/profile' with your actual backend endpoint if different
         const response = await api.get('/profile'); 
         
         if (response.data) {
-          // Map the database response to your component's state variables
           setUserData({
             fullName: response.data.fullName || "N/A", 
             programAndYear: response.data.programAndYear || "N/A",
@@ -52,6 +53,19 @@ const Profile = ({ onProfileUpdate }) => {
     fetchProfile();
   }, []);
 
+  const handleOpenTransparencyReport = async () => {
+    try {
+      const response = await api.get('/admin/transparency-logs'); 
+      if (response.data?.success) {
+        setTransparencyLogs(response.data.logs);
+        setIsTransparencyModalOpen(true);
+      }
+    } catch (err) {
+      console.error("Failed to load public transparency ledger:", err);
+      alert("Unable to fetch the transparency report at this moment.");
+    }
+  };
+
   const getRankDetails = (totalPointsEarned) => {
     if (totalPointsEarned <= 150) {
       return { title: "Green Guardian", className: "rank-green" };
@@ -66,7 +80,6 @@ const Profile = ({ onProfileUpdate }) => {
 
   const { title: rankTitle, className: rankClass } = getRankDetails(userData.totalPointsEarned);
 
-  // Open modal and populate the form with current user data
   const handleEditClick = () => {
     setEditFormData({
       fullName: userData.fullName !== "Loading..." && userData.fullName !== "N/A" ? userData.fullName : "",
@@ -76,23 +89,16 @@ const Profile = ({ onProfileUpdate }) => {
     setIsModalOpen(true);
   };
 
-  // Handle typing in the input fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setEditFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Submit the updated data to the backend
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Send the updated data to your backend (adjust the endpoint if necessary)
       await api.put('/profile', editFormData); 
       
-      // Update the local state so the UI reflects the changes instantly
       setUserData(prev => ({
         ...prev,
         fullName: editFormData.fullName,
@@ -104,63 +110,42 @@ const Profile = ({ onProfileUpdate }) => {
         onProfileUpdate(editFormData.fullName);
       }
       
-      // Close the modal
       setIsModalOpen(false);
       alert("Profile updated successfully!");
     } catch (error) {
       console.error("Failed to update profile:", error);
-      alert("Failed to update profile. Please try again.");
     }
   };
 
   const handlePrivacyToggle = async (e) => {
-  const isChecked = e.target.checked;
+    const isChecked = e.target.checked;
     try {
-      // Send the updated privacy mode directly to the backend
       await api.put('/profile', { privacyMode: isChecked });
-      
-      // Update local state instantly
-      setUserData(prev => ({
-        ...prev,
-        privacyMode: isChecked
-      }));
-      
-      alert(isChecked ? "Privacy Mode activated. You are now hidden from the leaderboard!" : "Privacy Mode deactivated. You are now visible on the leaderboard.");
+      setUserData(prev => ({ ...prev, privacyMode: isChecked }));
+      alert(isChecked ? "Privacy Mode activated!" : "Privacy Mode deactivated.");
     } catch (error) {
       console.error("Failed to update privacy settings:", error);
-      alert("Could not update privacy setting. Please try again.");
-      // Revert checkbox state on failure
       e.target.checked = !isChecked;
     }
   };
 
   const handleDeactivateAccount = async () => {
-  // Double-check confirmation prompt so users don't misclick it
-  const confirmDeactivate = window.confirm(
-    "Are you sure you want to deactivate your account? Your data will be archived until you log back in again."
-  );
+    const confirmDeactivate = window.confirm(
+      "Are you sure you want to deactivate your account? Your data will be archived until you log back in again."
+    );
+    if (!confirmDeactivate) return;
 
-  if (!confirmDeactivate) return;
+    try {
+      await api.post('/deactivate');
+      alert("Your account has been deactivated. Logging out...");
+      localStorage.removeItem('token');
+      localStorage.removeItem('studentName');
+      navigate('/login');
+    } catch (error) {
+      console.error("Failed to deactivate account:", error);
+    }
+  };
 
-  try {
-    // Send the deactivation request to the backend
-    await api.post('/deactivate');
-
-    alert("Your account has been deactivated. Logging out...");
-
-    // Clear authentication data
-    localStorage.removeItem('token');
-    localStorage.removeItem('studentName');
-
-    // Redirect user to login screen
-    navigate('/login');
-  } catch (error) {
-    console.error("Failed to deactivate account:", error);
-    alert("Could not deactivate account. Please try again later.");
-  }
-};
-
-  // The UI below remains exactly the same
   return (
     <div className="profile-container">
       {/* --- PROFILE HEADER CARD --- */}
@@ -225,6 +210,8 @@ const Profile = ({ onProfileUpdate }) => {
             <h3 className="header-title"><Settings size={18} /> Account Settings</h3>
           </div>
           <div className="settings-options">
+            
+            {/* PRIVACY MODE ROW */}
             <div className="setting-row">
               <div>
                 <p className="setting-name">Privacy Mode</p>
@@ -236,19 +223,34 @@ const Profile = ({ onProfileUpdate }) => {
                 onChange={handlePrivacyToggle} 
               />
             </div>
-          </div>
-            <div className="setting-row" onClick={handleDeactivateAccount} style={{ cursor: 'pointer' }}>
+
+            {/* TRANSPARENCY REPORT GENERATION LINE VIEW */}
+            <div className="setting-row" onClick={handleOpenTransparencyReport} style={{ cursor: 'pointer', borderTop: '1px solid #f5f5f5', borderBottom: '1px solid #f5f5f5', padding: '15px 0' }}>
+              <div>
+                <p className="setting-name" style={{ color: 'var(--maroon)' }}>Transparency Report</p>
+                <p className="subtitle">Generate transparency report.</p>
+              </div>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--maroon)', display: 'flex', alignItems: 'center', padding: '4px' }}>
+                <FileText size={18} />
+              </button>
+            </div>
+
+            {/* DEACTIVATE ACCOUNT ROW */}
+            <div className="setting-row" onClick={handleDeactivateAccount} style={{ cursor: 'pointer', paddingTop: '15px' }}>
               <div>
                 <p className="setting-name" style={{ color: '#dc2626' }}>Deactivate Account</p>
                 <p className="subtitle">Archive all your data momentarily.</p>
               </div>
               <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}>
-                <Ban size={17} style={{  color: '#dc2626' }} />
+                <Ban size={17} style={{ color: '#dc2626' }} />
               </button>
             </div>
-        </div>
 
-        {/* --- EDIT PROFILE MODAL --- */}
+          </div>
+        </div>
+      </div> {/* ◄ FIX 1: This closed grid layout bracket belongs inside the master return chain wrapper */}
+
+      {/* --- EDIT PROFILE MODAL --- */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -309,8 +311,70 @@ const Profile = ({ onProfileUpdate }) => {
         </div>
       )}
 
-      </div>
-    </div>
+      {/* --- ALL-TIME TRANSPARENCY EXPENSE LEDGER POPUP MODAL --- */}
+      {isTransparencyModalOpen && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000 }}>
+          <div className="modal-content card" style={{ maxWidth: '600px', width: '92%', maxHeight: '80vh', background: '#fff', borderRadius: '12px', padding: '25px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>
+            <button onClick={() => setIsTransparencyModalOpen(false)} style={{ position: 'absolute', top: '18px', right: '18px', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}><X size={22}/></button>
+            
+            <div style={{ borderBottom: '2px solid var(--maroon)', paddingBottom: '12px', marginBottom: '15px', textAlign: 'left' }}>
+              <h3 style={{ color: 'var(--maroon)', margin: 0, fontSize: '1.3rem', fontWeight: 'bold' }}>Campus Transparency Report</h3>
+              <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#666' }}>Real-time breakdown auditing of kiosk operations and supplies management</p>
+            </div>
+            
+            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '5px' }}>
+              {transparencyLogs && transparencyLogs.length > 0 ? (
+                transparencyLogs.map((log, i) => (
+                  <div key={'student-log-' + (log._id || i)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fdfdfd', border: '1px solid #eee', padding: '12px 15px', borderRadius: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left' }}>
+                      {log.receiptUrl ? (
+                        <img 
+                          src={log.receiptUrl} 
+                          alt="Receipt" 
+                          onClick={() => setActiveReceiptPreviewUrl(log.receiptUrl)}
+                          style={{ width: '38px', height: '38px', borderRadius: '4px', objectFit: 'cover', cursor: 'pointer', border: '1px solid #ccc' }}
+                          title="Click to zoom receipt document image"
+                        />
+                      ) : (
+                        <div style={{ width: '38px', height: '38px', borderRadius: '4px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: '9px', fontWeight: 'bold', border: '1px dashed #eee' }}>N/A</div>
+                      )}
+                      <div>
+                        <p style={{ margin: 0, fontWeight: '600', color: '#333', fontSize: '0.88rem' }}>{log.description}</p>
+                        <span style={{ fontSize: '0.75rem', color: '#888' }}>Verified Ecosystem Entry • {new Date(log.date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <strong style={{ color: 'var(--maroon)', fontSize: '1rem' }}>₱{log.amount.toLocaleString()}</strong>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: '#999', fontStyle: 'italic' }}>No logged operational expenditures found.</div>
+              )}
+            </div>
+            <button className="modal-save-btn" onClick={() => setIsTransparencyModalOpen(false)} style={{ marginTop: '20px', width: '100%', padding: '12px', background: 'var(--maroon)', border: 'none', borderRadius: '6px', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Close Ledger View</button>
+          </div>
+        </div>
+      )}
+
+      {/* --- RECEIPT DOCUMENT LIGHTBOX POPUP MAXIMIZATION LIGHTBOX --- */}
+      {activeReceiptPreviewUrl && (
+        <div className="modal-overlay" onClick={() => setActiveReceiptPreviewUrl(null)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 4000, backdropFilter: 'blur(6px)' }}>
+          <div style={{ position: 'relative', maxWidth: '85vw', maxHeight: '85vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setActiveReceiptPreviewUrl(null)} 
+              style={{ position: 'absolute', top: '-40px', right: '0', background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <X size={20} /> Close Preview
+            </button>
+            <img 
+              src={activeReceiptPreviewUrl} 
+              alt="Receipt Maximized Layout View" 
+              style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px', boxShadow: '0 12px 35px rgba(0,0,0,0.6)', objectFit: 'contain', background: '#fff', padding: '8px' }} 
+            />
+          </div>
+        </div>
+      )}
+
+    </div> // ◄ FIX 2: Closes the outer <div className="profile-container"> wrapper layout tag correctly
   );
 };
 
