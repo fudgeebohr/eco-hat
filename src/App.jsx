@@ -6,23 +6,27 @@ import AdminLogin from './pages/AdminLogin';
 import AdminRegister from './pages/AdminRegister';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import IdleLogoutTimeout from './components/IdleLogoutTimeout'; // ◄ Imported your new session monitor component
 
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<RoleSelection />} />
-        
-        {/* Student Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        
-        {/* Admin Routes */}
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/register-admin" element={<AdminRegister />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      </Routes>
+      {/* ─── WRAPPER WATCHES ALL INTERACTION BOUNDARIES SEAMLESSLY ─── */}
+      <IdleLogoutTimeout>
+        <Routes>
+          <Route path="/" element={<RoleSelection />} />
+          
+          {/* Student Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/register-admin" element={<AdminRegister />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        </Routes>
+      </IdleLogoutTimeout>
     </Router>
   );
 }
