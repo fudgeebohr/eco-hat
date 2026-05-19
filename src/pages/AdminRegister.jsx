@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ShieldCheck, Lock, Key, User, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Lock, Key, User, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Added Eye & EyeOff
 import './Auth.css';
 import api from '../api';
 
@@ -9,6 +9,11 @@ const AdminRegister = () => {
   const [formData, setFormData] = useState({ username: '', password: '', adminKey: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // ─── NEW: SEPARATE VISIBILITY TOGGLE STATES ──────────────────────────────
+  const [showPassword, setShowPassword] = useState(false);
+  const [showAdminKey, setShowAdminKey] = useState(false);
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -48,14 +53,47 @@ const AdminRegister = () => {
             <User className="input-icon" size={20} />
             <input name="username" placeholder="Username" onChange={handleChange} required />
           </div>
-          <div className="input-group">
+
+          {/* PASSWORD FIELD WITH TOGGLE ACTION */}
+          <div className="input-group" style={{ position: 'relative' }}>
             <Lock className="input-icon" size={20} />
-            <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
+            <input 
+              name="password" 
+              type={showPassword ? "text" : "password"} // ◄ Dynamically updates type
+              placeholder="Password" 
+              onChange={handleChange} 
+              style={{ paddingRight: '45px' }} // Ensures long inputs don't hide behind icon
+              required 
+            />
+            <button
+              type="button" // ◄ CRITICAL: Prevents hitting Enter from accidentally executing form submissions
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0, display: 'flex', alignItems: 'center' }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
-          <div className="input-group">
+
+          {/* SECRET ADMIN KEY FIELD WITH TOGGLE ACTION */}
+          <div className="input-group" style={{ position: 'relative' }}>
             <Key className="input-icon" size={20} />
-            <input name="adminKey" type="password" placeholder="Secret Admin Key" onChange={handleChange} required />
+            <input 
+              name="adminKey" 
+              type={showAdminKey ? "text" : "password"} // ◄ Dynamically updates type
+              placeholder="Secret Admin Key" 
+              onChange={handleChange} 
+              style={{ paddingRight: '45px' }}
+              required 
+            />
+            <button
+              type="button"
+              onClick={() => setShowAdminKey(!showAdminKey)}
+              style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0, display: 'flex', alignItems: 'center' }}
+            >
+              {showAdminKey ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
+
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Verifying...' : 'Register Admin'}
           </button>

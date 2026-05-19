@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { User, Lock, BookOpen, GraduationCap, Leaf, ArrowLeft } from 'lucide-react';
+import { User, Lock, BookOpen, GraduationCap, Leaf, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Added Eye & EyeOff
 import './Auth.css';
 import api from '../api';
 
@@ -15,6 +15,11 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // ─── NEW: VISIBILITY TOGGLE STATES FOR BOTH FIELDS ───────────────────────
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -68,14 +73,47 @@ const Register = () => {
             <BookOpen className="input-icon" size={20} />
             <input name="programAndYear" placeholder="Program & Year" onChange={handleChange} required />
           </div>
-          <div className="input-group">
+
+          {/* MAIN PASSWORD INPUT FIELD */}
+          <div className="input-group" style={{ position: 'relative' }}>
             <Lock className="input-icon" size={20} />
-            <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
+            <input 
+              name="password" 
+              type={showPassword ? "text" : "password"} 
+              placeholder="Password" 
+              onChange={handleChange} 
+              style={{ paddingRight: '45px' }}
+              required 
+            />
+            <button
+              type="button" // Prevents form submission triggers on enter key down
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0, display: 'flex', alignItems: 'center' }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
-          <div className="input-group">
+
+          {/* CONFIRM PASSWORD INPUT FIELD */}
+          <div className="input-group" style={{ position: 'relative' }}>
             <Lock className="input-icon" size={20} />
-            <input name="confirmPassword" type="password" placeholder="Confirm Password" onChange={handleChange} required />
+            <input 
+              name="confirmPassword" 
+              type={showConfirmPassword ? "text" : "password"} 
+              placeholder="Confirm Password" 
+              onChange={handleChange} 
+              style={{ paddingRight: '45px' }}
+              required 
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0, display: 'flex', alignItems: 'center' }}
+            >
+              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
+
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Creating Account...' : 'Register'}
           </button>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { User, Lock, Leaf, ArrowLeft } from 'lucide-react';
+import { User, Lock, Leaf, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Added Eye & EyeOff
 import './Auth.css';
 import api from '../api';
 
@@ -10,8 +10,11 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  
+  // ─── NEW: VISIBILITY TOGGLE STATE ────────────────────────────────────────
+  const [showPassword, setShowPassword] = useState(false);
 
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,16 +63,27 @@ const Login = () => {
               required
             />
           </div>
-          <div className="input-group">
+
+          {/* STUDENT PASSWORD FIELD WITH INTEGRATED TOGGLE BUTTON */}
+          <div className="input-group" style={{ position: 'relative' }}>
             <Lock className="input-icon" size={20} />
             <input 
-              type="password" 
+              type={showPassword ? "text" : "password"} // ◄ Toggles types inline
               placeholder="Password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              style={{ paddingRight: '45px' }} // ◄ Keeps characters from hiding beneath the eye
               required
             />
+            <button
+              type="button" // ◄ Prevents enter key press misfires from submitting the form
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0, display: 'flex', alignItems: 'center' }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
+
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Authenticating...' : 'Login'}
           </button>

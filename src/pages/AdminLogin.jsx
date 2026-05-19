@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { User, Lock, Leaf, ArrowLeft } from 'lucide-react';
+import { User, Lock, Leaf, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Added Eye & EyeOff
 import './Auth.css';
 import api from '../api';
 
@@ -10,6 +10,10 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // ─── NEW: VISIBILITY TOGGLE STATE ────────────────────────────────────────
+  const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -48,10 +52,27 @@ const AdminLogin = () => {
             <User className="input-icon" size={20} />
             <input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
           </div>
-          <div className="input-group">
+
+          {/* PASSWORD FIELD WITH INTEGRATED TOGGLE BUTTON */}
+          <div className="input-group" style={{ position: 'relative' }}>
             <Lock className="input-icon" size={20} />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input 
+              type={showPassword ? "text" : "password"} // ◄ Switches dynamically
+              placeholder="Password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              style={{ paddingRight: '45px' }} // ◄ Prevents text running under icon
+              required 
+            />
+            <button
+              type="button" // ◄ Prevents accidental form submissions on Enter key
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0, display: 'flex', alignItems: 'center' }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
+
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Authenticating...' : 'Login as Admin'}
           </button>
