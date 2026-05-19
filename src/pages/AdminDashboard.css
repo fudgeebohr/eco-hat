@@ -279,3 +279,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --- SIDEBAR JUMP TARGET GLOW HIGHLIGHT --- */
+.highlight-glow {
+  animation: targetGlow 2s ease-out;
+}
+
+@keyframes targetGlow {
+  0% {
+    box-shadow: 0 0 0 4px rgba(128, 0, 0, 0.4); /* Maroon tint glow */
+    border-color: var(--maroon);
+    transform: scale(1.01);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.2); /* Shifting to Gold trace */
+  }
+  100% {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Smoothly returns to standard default shadow */
+    transform: scale(1);
+  }
+}

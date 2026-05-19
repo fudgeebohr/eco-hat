@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { 
@@ -24,14 +24,21 @@ const AdminDashboard = () => {
   // ─── LIVE STUDENT LEADERBOARD STATE ──────────────────────────────────────
   const [leaderboard, setLeaderboard] = useState([]);
 
-  // ─── NEW: TRANSPARENCY REPORT SYSTEM STATES ──────────────────────────────
+  // ─── TRANSPARENCY REPORT SYSTEM STATES ──────────────────────────────
   const [transparencyLogs, setTransparencyLogs] = useState([]);
   const [inputAmount, setInputAmount] = useState('');
   const [inputDesc, setInputDesc] = useState('');
-  const [selectedReceiptFile, setSelectedReceiptFile] = useState(null); // Stores raw Base64 data strings
+  const [selectedReceiptFile, setSelectedReceiptFile] = useState(null); 
   const [receiptFileName, setReceiptFileName] = useState('');
-  const [isTransparencyModalOpen, setIsTransparencyModalOpen] = useState(false); // Handles global history popups
-  const [activeReceiptPreviewUrl, setActiveReceiptPreviewUrl] = useState(null); // Lightbox preview modal controller
+  const [isTransparencyModalOpen, setIsTransparencyModalOpen] = useState(false); 
+  const [activeReceiptPreviewUrl, setActiveReceiptPreviewUrl] = useState(null); 
+
+  // ─── NEW: DOM ELEMENT TARGET REFERENCES FOR SMOOTH SCROLL & GLOW ──────────
+  const overviewRef = useRef(null);
+  const inventoryRef = useRef(null);
+  const leaderboardRef = useRef(null);
+  const transparencyRef = useRef(null);
+  const scannerRef = useRef(null);
 
   const navigate = useNavigate();
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -48,7 +55,7 @@ const AdminDashboard = () => {
         api.get('/admin/bottle-stats'),
         api.get('/admin/inventory'),
         api.get('/leaderboard'),
-        api.get('/admin/transparency-logs') // ◄ NEW: Pulls down shared ledger records
+        api.get('/admin/transparency-logs')
       ]);
 
       if (profileRes?.data?.fullName) {
@@ -84,6 +91,30 @@ const AdminDashboard = () => {
     }
   }, [scanStatus]);
 
+  // ─── NEW: SMOOTH JUMP SCROLL & ELEMENT HIGHLIGHT TRIGGER ENGINE ────────────
+  const handleSidebarTabClick = (targetRef) => {
+    if (!targetRef || !targetRef.current) return;
+
+    // 1. Close sidebar menu instantly on mobile screens
+    setIsSidebarOpen(false);
+
+    // 2. Smoothly scroll into viewport context (perfect for mobile sizing layout views)
+    targetRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center' // Centers card vertically on screens
+    });
+
+    // 3. Apply class glow highlight for web view users
+    targetRef.current.classList.add('highlight-glow');
+
+    // Remove the CSS animation class after it completes running so it can be re-triggered
+    setTimeout(() => {
+      if (targetRef.current) {
+        targetRef.current.classList.remove('highlight-glow');
+      }
+    }, 2000);
+  };
+
   // LAUNCH MANAGEMENT MODAL HANDLER
   const openEditModal = (item) => {
     setEditingItem(item);
@@ -110,7 +141,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // NEW: HANDLE SUBMISSION LOG ENTRIES UP TO CLOUD ROUTERS
+  // HANDLE SUBMISSION LOG ENTRIES UP TO CLOUD ROUTERS
   const handleLogTransactionSubmit = async () => {
     if (!inputAmount || !inputDesc) {
       return alert("Please specify both an entry amount and transaction description details.");
@@ -130,21 +161,20 @@ const AdminDashboard = () => {
         setInputDesc('');
         setSelectedReceiptFile(null);
         setReceiptFileName('');
-        refreshDashboardData(); // Instantly synchronizes view listings across all active admin computers!
+        refreshDashboardData(); 
       }
     } catch (err) {
       alert("Failed to record transaction log entry parameters.");
     }
   };
 
-  // UPDATED: ENHANCED BASE64 IMAGE PARSER READ CHANNELS
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setReceiptFileName(file.name);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSelectedReceiptFile(reader.result); // Locks string value safely into state memory cache
+        setSelectedReceiptFile(reader.result); 
       };
       reader.readAsDataURL(file);
     }
@@ -235,12 +265,23 @@ const AdminDashboard = () => {
           <X className="sidebar-close" onClick={toggleSidebar} size={24} />
         </div>
         
+        {/* ─── UPDATED: DYNAMIC SHORTCUT NAVIGATION LINKS LAYOUT ────────────── */}
         <nav className="sidebar-links">
-          <div className="admin-menu-item active"><LayoutDashboard size={20}/> Overview</div>
-          <div className="admin-menu-item"><Package size={20}/> Inventory</div>
-          <div className="admin-menu-item"><Users size={20}/> User Management</div>
-          <div className="admin-menu-item"><BarChart3 size={20}/> Analytics</div>
-          <div className="admin-menu-item"><Settings size={20}/> Settings</div>
+          <div className="admin-menu-item active" onClick={() => handleSidebarTabClick(overviewRef)}>
+            <LayoutDashboard size={20}/> Overview
+          </div>
+          <div className="admin-menu-item" onClick={() => handleSidebarTabClick(inventoryRef)}>
+            <Package size={20}/> Inventory Stocks
+          </div>
+          <div className="admin-menu-item" onClick={() => handleSidebarTabClick(leaderboardRef)}>
+            <Users size={20}/> Leaderboards
+          </div>
+          <div className="admin-menu-item" onClick={() => handleSidebarTabClick(transparencyRef)}>
+            <FileText size={20}/> Transparency Report
+          </div>
+          <div className="admin-menu-item" onClick={() => handleSidebarTabClick(scannerRef)}>
+            <QrCode size={20}/> Redemption Scanner
+          </div>
         </nav>
 
         <div className="admin-logout-section">
@@ -264,8 +305,8 @@ const AdminDashboard = () => {
         <div className="content-transition-wrapper">
           <div className="admin-content-grid">
             
-            {/* Top Row: Stats */}
-            <div className="stats-row">
+            {/* Top Row: Stats Anchor Node */}
+            <div className="stats-row" ref={overviewRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
               <div className="stat-card">
                 <p className="label">Bottles Collected Today</p>
                 <h1 className="stat-val maroon-text">{stats.today.toLocaleString()}</h1>
@@ -280,11 +321,11 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Split Row: Inventory & Leaderboard */}
+            {/* Split Row: Inventory & Leaderboard Anchor Nodes */}
             <div className="dashboard-split-row">
               
-              {/* DYNAMIC LIVE INVENTORY CARD LAYOUT */}
-              <div className="admin-card">
+              {/* ATTACHED: inventoryRef anchor */}
+              <div className="admin-card" ref={inventoryRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
                 <div className="card-header-flex">
                   <h3 className="header-title"><Package size={18}/> Inventory Stock</h3>
                 </div>
@@ -307,8 +348,8 @@ const AdminDashboard = () => {
                 </ul>
               </div>
 
-              {/* DYNAMIC LIVE LEADERBOARD CARD LAYOUT */}
-              <div className="admin-card">
+              {/* ATTACHED: leaderboardRef anchor */}
+              <div className="admin-card" ref={leaderboardRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
                 <div className="card-header-flex" style={{ borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '15px' }}>
                   <h3 className="header-title" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold' }}>
                     <Users size={18} color="var(--maroon)" /> Sustainability Leaderboard
@@ -353,10 +394,9 @@ const AdminDashboard = () => {
 
             </div>
 
-            {/* ==========================================
-               FULL WIDTH: TRANSPARENCY REPORT CARD (LIVE CONSOLE VIEW)
-               ========================================== */}
-            <div className="admin-card">
+            {/* FULL WIDTH: TRANSPARENCY REPORT CARD */}
+            {/* ATTACHED: transparencyRef anchor */}
+            <div className="admin-card" ref={transparencyRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
               <div className="card-header-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 className="header-title" style={{ margin: 0 }}><FileText size={18}/> Transparency Report</h3>
                 {transparencyLogs.length > 0 && (
@@ -389,7 +429,7 @@ const AdminDashboard = () => {
                 <button className="log-btn-primary log-btn" onClick={handleLogTransactionSubmit}>Log Entry</button>
               </div>
 
-              {/* RECENT RECORDS ARCHIVE COMPACT MATRIX (LATEST 3 LOGS) */}
+              {/* RECENT RECORDS ARCHIVE */}
               {transparencyLogs.length > 0 && (
                 <div style={{ marginTop: '25px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
                   <h4 style={{ fontSize: '0.82rem', color: '#777', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', fontWeight: 'bold' }}>Latest Log Entries</h4>
@@ -421,8 +461,9 @@ const AdminDashboard = () => {
               )}
             </div>
 
-            {/* Compact: Redemption Scanner */}
-            <div className="admin-card standalone-card">
+            {/* COMPACT: REDEMPTION SCANNER */}
+            {/* ATTACHED: scannerRef anchor */}
+            <div className="admin-card standalone-card" ref={scannerRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
               <div className="card-header-flex">
                 <h3 className="header-title"><QrCode size={18}/> Redemption Scanner</h3>
               </div>
@@ -460,7 +501,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* ─── INVENTORY EDIT CONTROL OVERLAY MODAL INTERFACE ───────────────── */}
+      {/* INVENTORY EDIT CONTROL OVERLAY MODAL INTERFACE */}
       {editingItem && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
           <div className="modal-content card" style={{ maxWidth: '400px', width: '90%', background: '#fff', borderRadius: '8px', padding: '24px', position: 'relative', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
@@ -510,7 +551,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* ─── NEW: ALL-TIME TRANSPARENCY EXPENSE LEDGER POPUP MODAL ───────────── */}
+      {/* ALL-TIME TRANSPARENCY EXPENSE LEDGER POPUP MODAL */}
       {isTransparencyModalOpen && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000 }}>
           <div className="modal-content card" style={{ maxWidth: '600px', width: '92%', maxHeight: '80vh', background: '#fff', borderRadius: '12px', padding: '25px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>
@@ -549,7 +590,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* ─── NEW: RECEIPT DOCUMENT LIGHTBOX POPUP MAXIMIZATION LIGHTBOX ──────── */}
+      {/* RECEIPT DOCUMENT LIGHTBOX POPUP MAXIMIZATION LIGHTBOX */}
       {activeReceiptPreviewUrl && (
         <div className="modal-overlay" onClick={() => setActiveReceiptPreviewUrl(null)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 4000, backdropFilter: 'blur(6px)' }}>
           <div style={{ position: 'relative', maxWidth: '85vw', maxHeight: '85vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
