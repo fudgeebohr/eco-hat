@@ -49,7 +49,7 @@ ECO-HAT Sustainability Portal is a comprehensive full-stack web application desi
 ---
 ## Project Structure
 
-<a href="https://github.com/fugeebohr/eco-hat">
+<a href="https://github.com/fudgeebohr/eco-hat">
   <img src="https://img.shields.io/badge/FRONTEND-800000?style=for-the-badge&logo=github&logoColor=white" alt="Frontend Layout" /><img src="https://img.shields.io/badge/-ECO_HAT-D4AF37?style=for-the-badge&logoColor=black" alt="Project Accent" />
 </a>
 
@@ -78,7 +78,7 @@ eco-hat/
 └── package-lock.json       # Dependency tree lockfile
 ```
 
-<a href="https://github.com/fugeebohr/ecohat-node">
+<a href="https://github.com/fudgeebohr/ecohat-node">
   <img src="https://img.shields.io/badge/BACKEND-800000?style=for-the-badge&logo=github&logoColor=white" alt="Backend Layout" /><img src="https://img.shields.io/badge/-ECOHAT_NODE-D4AF37?style=for-the-badge&logoColor=black" alt="Project Accent" />
 </a>
 
