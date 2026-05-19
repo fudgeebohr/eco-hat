@@ -1,6 +1,7 @@
 ## <img src="https://unpkg.com/lucide-static@latest/icons/leaf.svg" width="26" height="20" /> ECO-HAT | Sustainability Portal
 
-![MongoDB Atlas](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge\&logo=mongodb\&logoColor=white) ![Express.js](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge\&logo=express\&logoColor=%2361DAFB) ![React.js](https://img.shields.io/badge/react.js-%2320232a.svg?style=for-the-badge\&logo=react\&logoColor=%2361DAFB) ![NodeJS](https://img.shields.io/badge/node.js-6DA55F.svg?style=for-the-badge\&logo=node.js\&logoColor=white)
+![MongoDB Atlas](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge\&logo=mongodb\&logoColor=white) ![Express.js](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge\&logo=express\&logoColor=%2361DAFB) ![React.js](https://img.shields.io/badge/react.js-%2320232a.svg?style=for-the-badge\&logo=react\&logoColor=%2361DAFB) ![NodeJS](https://img.shields.io/badge/node.js-6DA55F.svg?style=for-the-badge\&logo=node.js\&logoColor=white) 
+[![GitHub issues](https://img.shields.io/github/issues/fudgeebohr/eco-hat?style=flat-square&logo=github&color=orange)](https://github.com/fudgeebohr/eco-hat/issues) [![Feature Requests](https://img.shields.io/github/issues/fudgeebohr/eco-hat/feature%20request?label=feature%20requests&style=flat-square&logo=github&color=brightgreen)](https://github.com/fudgeebohr/eco-hat/issues?q=is%3Aopen+is%3Aissue+label%3A%22feature+request%22)
 
 ## Description
 ECO-HAT Sustainability Portal is a comprehensive full-stack web application designed to promote and manage eco-friendly initiatives and sustainable practices. The platform offers a secure, role-based ecosystem for administrators and regular users, featuring personalized dashboards, a gamified rewards system, and transparency logs to track sustainability items and efforts effectively.
@@ -97,3 +98,7 @@ ecohat-node/
 │   └── profile.js          # User/Admin profile management routes
 └── package.json            # Backend dependencies and run scripts
 ```
+
+---
+
+[![Frontend](https://img.shields.io/badge/Frontend-DevShanee-3178C6?style=flat-square&logo=github&logoColor=white)](https://github.com/DevShanee) [![Full--Stack](https://img.shields.io/badge/Full--Stack-fudgeebohr-238636?style=flat-square&logo=github&logoColor=white)](https://github.com/fudgeebohr)
