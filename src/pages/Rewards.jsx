@@ -1,53 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ShoppingCart, X, Minus, Plus, AlertCircle, Trophy, 
-  Book, PenTool, Pencil, FileText, Scissors, Highlighter, 
-  Ruler, Eraser, Layers, ClipboardList, Trash2, Eye
-} from 'lucide-react';
+  Book, PenTool, Pencil, FileText, Trash2, Eye,
+  Heart, ShieldPlus, Sparkles, Smile, FileSpreadsheet, Gift, Ruler 
+} from 'lucide-react'; // ◄ Imported fresh icons for hygiene & paper variants
 import { QRCodeSVG } from 'qrcode.react';
 import './Rewards.css';
 import api from '../api'; 
 
 const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
-  const [selectedItem, setSelectedItem] = useState(null); // Controls Add Qty Modal
+  const [selectedItem, setSelectedItem] = useState(null); 
   const [quantity, setQuantity] = useState(1);
-  const [isCartModalOpen, setIsCartModalOpen] = useState(false); // Controls View Cart Modal
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false); 
   const [generatedQr, setGeneratedQr] = useState(null);
   const [cart, setCart] = useState([]);
   const [studentNumber, setStudentNumber] = useState('');
   const [checkoutSummary, setCheckoutSummary] = useState('');
   const [checkoutCost, setCheckoutCost] = useState(0);
 
-  // ─── NEW: LIVE DATABASE REWARDS STOCK STATE ──────────────────────────────
   const [rewardItems, setRewardItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Map icons dynamically to item names since MongoDB doesn't store JSX icons
+  // ─── DYNAMIC MAPPER MATCHING YOUR NEW ECO-PUNTOS LINEUP ──────────────────
   const getRewardIcon = (name) => {
+    if (name.includes('Yellow Paper')) {
+      return <FileSpreadsheet size={48} />; // Distinct sheet/pad icon variation
+    }
+    
     switch (name) {
-      case 'Notebook': return <Book size={48} />;
-      case 'Ballpen': return <PenTool size={48} />;
-      case 'Pencil': return <Pencil size={48} />;
-      case 'Yellow Paper': return <FileText size={48} />;
-      case 'Scissors': return <Scissors size={48} />;
-      case 'Crayons': return <Highlighter size={48} />;
+      // School Supplies
       case 'Ruler': return <Ruler size={48} />;
-      case 'Eraser': return <Eraser size={48} />;
-      case 'Folder': return <Layers size={48} />;
-      case 'Correction Tape': return <ClipboardList size={48} />;
+      case 'Bond Papers (2 pcs)': return <FileText size={48} />;
+      case 'Pencils': return <Pencil size={48} />;
+      case 'Ballpens': return <PenTool size={48} />;
+      case 'Notebook': return <Book size={48} />;
+      case 'Cattleya': return <Book size={48} style={{ borderLeft: '4px solid var(--maroon)' }} />;
+      case 'Correction Tape': return <Sparkles size={48} />;
+      case 'Garbage Bags': return <Gift size={48} />;
+
+      // Sanitary & Hygiene Supplies
+      case 'Sanitary Napkins': return <Heart size={48} />;
+      case 'Alcohol': return <ShieldPlus size={48} />;
+      case 'Markers': return <PenTool size={48} style={{ strokeWidth: 3 }} />;
+      case 'Wet Wipes': return <Smile size={48} />;
+      case 'Tissue': return <FileText size={48} style={{ opacity: 0.7 }} />;
+      
       default: return <Book size={48} />;
     }
   };
 
-  // 1. Fetch live stock values alongside user cloud cart on mount
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
-        // Execute profile and public catalog syncs simultaneously
         const [profileRes, inventoryRes] = await Promise.all([
           api.get('/profile'),
-          api.get('/rewards/inventory') // ◄ Hit the public student read endpoint we made
+          api.get('/rewards/inventory') 
         ]);
 
         if (profileRes.data) {
@@ -56,7 +64,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
         }
 
         if (inventoryRes.data?.success) {
-          // Attach JSX icons to data array records
           const parsedItems = inventoryRes.data.inventory.map(item => ({
             ...item,
             icon: getRewardIcon(item.name)
@@ -71,9 +78,8 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
     };
     
     fetchInitialData();
-  }, [generatedQr]); // Re-fetch to update local stock limits when a checkout completes!
+  }, [generatedQr]);
 
-  // 2. Automatically push mutations up to your MongoDB cluster
   useEffect(() => {
     if (cart.length === 0) return;
 
@@ -92,12 +98,10 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
     return () => clearTimeout(delayDebounce);
   }, [cart]);
 
-  // Calculate unique item count and totals
   const totalCartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalCartCost = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalCost = selectedItem ? selectedItem.price * quantity : 0;
   
-  // ─── UPDATED BOUNDARIES: STOCK CONSTRAINT VALIDATION ──────────────────────
   const canAfford = userPoints >= totalCost;
   const isStockAvailable = selectedItem ? selectedItem.stock >= quantity : true;
 
@@ -117,7 +121,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
   };
 
   const updateQuantity = (itemId, amount) => {
-    // Find item stock reference boundary
     const referenceItem = rewardItems.find(r => r.id === itemId);
     const maxStock = referenceItem ? referenceItem.stock : 99;
 
@@ -145,7 +148,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
     try {
       const payload = {
         items: cart.map(item => ({
-          itemId: item.itemId, // Fix item mapping reference error 
+          itemId: item.itemId, 
           name: item.name,
           quantity: item.quantity,
           pointsDeducted: item.price * item.quantity
@@ -179,8 +182,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
     <div className="rewards-container">
       {/* --- SIDE-BY-SIDE HEADER ROW --- */}
       <div className="rewards-header-row">
-        
-        {/* LEFT: AVAILABLE BALANCE CARD */}
         <div className="card balance-card" style={{ margin: 0, height: '100%' }}>
           <div className="balance-info">
             <p className="label">Available Balance</p>
@@ -191,7 +192,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
           </div>
         </div>
 
-        {/* RIGHT: REDEMPTION CART SUMMARY OVERVIEW */}
         <div className="card balance-card" style={{ margin: 0, height: '100%' }}>
           <div className="balance-info">
             <p className="label">School Bag</p>
@@ -203,10 +203,9 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
             <Eye size={18} /> View Bag ({totalCartCost} pts)
           </button>
         </div>
-
       </div>
 
-      {/* --- REWARDS GRID (NOW EXTRACTING LIVE MONGODB DATA) --- */}
+      {/* --- REWARDS GRID (LIVE MAP FROM SEEDED DB RECORDS) --- */}
       <div className="rewards-grid-full">
         {rewardItems.map((item) => (
           <div key={item.id} className="reward-item-card" style={{ opacity: item.stock === 0 ? 0.6 : 1 }}>
@@ -214,7 +213,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
             <h3 className="item-name">{item.name}</h3>
             <p className="item-price">{item.price} pts</p>
             
-            {/* DYNAMIC STOCK TEXT SHADING */}
             <p className="item-stock" style={{ color: item.stock === 0 ? '#dc2626' : '#666', fontWeight: item.stock === 0 ? 'bold' : 'normal' }}>
               {item.stock > 0 ? `Stock: ${item.stock}` : 'OUT OF STOCK'}
             </p>
@@ -253,7 +251,7 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                     <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '20px' }}>
                       {cart.map(item => (
                         <div key={item.itemId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
-                          <div>
+                          <div style={{ textAlign: 'left' }}>
                             <p style={{ fontWeight: '600', margin: 0 }}>{item.name}</p>
                             <span style={{ fontSize: '12px', color: '#666' }}>{item.price * item.quantity} pts</span>
                           </div>
@@ -322,7 +320,6 @@ const Rewards = ({ userPoints = 750, onPointsUpdate }) => {
                 <div className="qty-controls">
                   <button onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus size={18}/></button>
                   <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{quantity}</span>
-                  {/* Lock the plus button incrementer to current live stock availability limits */}
                   <button onClick={() => setQuantity(Math.min(selectedItem.stock, quantity + 1))} disabled={quantity >= selectedItem.stock}><Plus size={18}/></button>
                 </div>
               </div>
