@@ -450,10 +450,12 @@ const AdminDashboard = () => {
                           )}
                           <div>
                             <p style={{ margin: 0, fontWeight: '600', color: '#333', fontSize: '0.92rem' }}>{log.description}</p>
-                            <span style={{ fontSize: '0.78rem', color: '#777' }}>By {log.loggedBy || 'Admin'} • {new Date(log.date).toLocaleDateString()}</span>
+                            <span style={{ fontSize: '0.78rem', color: '#777' }}>By {log.loggedBy || 'Admin'} • {log.date ? new Date(log.date).toLocaleDateString() : 'Recent'}</span>
                           </div>
                         </div>
-                        <strong style={{ color: 'var(--maroon)', fontSize: '1.05rem' }}>₱{log.amount.toLocaleString()}</strong>
+                        <strong style={{ color: 'var(--maroon)', fontSize: '1.05rem' }}>
+                          ₱{(log.amount ?? 0).toLocaleString()}
+                        </strong>
                       </div>
                     ))}
                   </div>
@@ -578,10 +580,12 @@ const AdminDashboard = () => {
                     )}
                     <div>
                       <p style={{ margin: 0, fontWeight: '600', color: '#333', fontSize: '0.88rem' }}>{log.description}</p>
-                      <span style={{ fontSize: '0.75rem', color: '#888' }}>Logged by: {log.loggedBy} • {new Date(log.date).toLocaleDateString()}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#888' }}>Logged by: {log.loggedBy || 'Admin'} • {log.date ? new Date(log.date).toLocaleDateString() : 'Recent'}</span>
                     </div>
                   </div>
-                  <strong style={{ color: 'var(--maroon)', fontSize: '1rem' }}>₱{log.amount.toLocaleString()}</strong>
+                  <strong style={{ color: 'var(--maroon)', fontSize: '1rem' }}>
+                    ₱{(log.amount ?? 0).toLocaleString()}
+                  </strong>
                 </div>
               ))}
             </div>
