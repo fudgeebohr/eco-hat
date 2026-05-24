@@ -28,12 +28,6 @@ const RoleSelection = () => {
             <span>Administrator</span>
           </button>
         </div>
-
-        <div className="admin-footer">
-          <p className="admin-subtext">
-            New Administrator? <Link to="/register-admin">Register here</Link>
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; 
 import axios from 'axios';
-import { User, Lock, Leaf, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Added Eye & EyeOff
+import { User, Lock, Leaf, ArrowLeft, Eye, EyeOff } from 'lucide-react'; 
 import './Auth.css';
 import api from '../api';
 
@@ -76,6 +76,11 @@ const AdminLogin = () => {
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Authenticating...' : 'Login as Admin'}
           </button>
+          <div className="admin-footer">
+              <p className="admin-subtext">
+                New Administrator? <Link to="/register-admin">Register here</Link>
+              </p>
+          </div>
         </form>
       </div>
     </div>
