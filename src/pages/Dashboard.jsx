@@ -17,8 +17,8 @@ const Dashboard = () => {
   const [userData, setUserData] = useState(null); 
   const [leaderboard, setLeaderboard] = useState([]); 
   const [loading, setLoading] = useState(true);
-  const totalHistory = userData?.history 
-    ? [...userData.history].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const totalHistory = userData?.recentActivity 
+    ? [...userData.recentActivity].sort((a, b) => new Date(b.date) - new Date(a.date))
     : [];
   const navigate = useNavigate();
 
