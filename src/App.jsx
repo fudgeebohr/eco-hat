@@ -6,7 +6,8 @@ import AdminLogin from './pages/AdminLogin';
 import AdminRegister from './pages/AdminRegister';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import IdleLogoutTimeout from './components/IdleLogoutTimeout'; // ◄ Imported your new session monitor component
+import IdleLogoutTimeout from './components/IdleLogoutTimeout'; 
+import ForgotPassword from './pages/ForgotPassword'; 
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           
           {/* Student Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
           

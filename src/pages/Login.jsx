@@ -83,6 +83,15 @@ const Login = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-10px', marginBottom: '15px', width: '100%' }}>
+            <Link 
+              to="/forgot-password" 
+              style={{ color: 'var(--maroon)', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}
+              className="forgot-password-link"
+            >
+              Forgot Password?
+            </Link>
+          </div>
 
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Authenticating...' : 'Login'}
