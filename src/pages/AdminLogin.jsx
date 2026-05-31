@@ -76,11 +76,6 @@ const AdminLogin = () => {
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Authenticating...' : 'Login as Admin'}
           </button>
-          <div className="admin-footer">
-              <p className="admin-subtext">
-                New Administrator? <Link to="/register-admin">Register here</Link>
-              </p>
-          </div>
         </form>
       </div>
     </div>
