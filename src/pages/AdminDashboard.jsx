@@ -15,6 +15,7 @@ const AdminDashboard = () => {
   const [scannedData, setScannedData] = useState(null);
   const [adminName, setAdminName] = useState('ADMIN'); 
   const [stats, setStats] = useState({ today: 0, weekly: 0, monthly: 0 });
+  const [manualRefCode, setManualRefCode] = useState('');
 
   // ─── INVENTORY STOCK STATE MANAGERS ──────────────────────────────────────
   const [inventory, setInventory] = useState([]);
@@ -254,6 +255,28 @@ const AdminDashboard = () => {
     }
   };
 
+  // ─── MANUAL REFERENCE CODE HANDLING FALLBACK ──────────────────────────────
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+    if (!manualRefCode.trim()) return alert("Please enter a valid reference code.");
+
+    const sanitizedCode = manualRefCode.trim().toUpperCase();
+
+    try {
+      // Hit the live lookup router we built
+      const response = await api.get(`/admin/lookup-voucher/${sanitizedCode}`);
+
+      if (response.data.success) {
+        // Auto-fill all parameters smoothly from the matching database schema
+        setScannedData(response.data.voucher);
+        setScanStatus('detected'); // Pop open the verification overlay card
+        setManualRefCode('');      // Flush text field clean
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to locate voucher reference data parameters.");
+    }
+  };
+
   return (
     <div className="admin-wrapper">
       <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
@@ -467,36 +490,65 @@ const AdminDashboard = () => {
             {/* ATTACHED: scannerRef anchor */}
             <div className="admin-card standalone-card" ref={scannerRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
               <div className="card-header-flex">
-                <h3 className="header-title"><QrCode size={18}/> Redemption Scanner</h3>
+                <h3><QrCode size={18}/> Redemption Control Hub</h3>
               </div>
-              <div className="scanner-container" style={{ minHeight: '260px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div className="scanner-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '15px' }}>
+                
+                {/* CAMERA VIEW CONTROL BOX AREA */}
+                <div style={{ minHeight: '260px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                  {scanStatus === 'idle' && (
+                    <div className="scanner-placeholder" onClick={() => setScanStatus('scanning')} style={{ cursor: 'pointer', textAlign: 'center' }}>
+                      <QrCode size={48} color="var(--gold)" style={{ marginBottom: '10px' }} />
+                      <p style={{ fontWeight: 'bold', fontSize: '13px', margin: 0 }}>TAP TO START CAMERA SCANNER</p>
+                    </div>
+                  )}
+                  
+                  {scanStatus === 'scanning' && <div id="reader" style={{ width: '100%' }}></div>}
+                  
+                  {scanStatus === 'detected' && (
+                    <div className="scan-result-card" style={{ width: '100%', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
+                      <div className="student-info">
+                        <h4 className="maroon-text" style={{ margin: '0 0 12px 0', fontSize: '1.1rem', fontWeight: 'bold' }}>Claim Package Verification Required</h4>
+                        <p style={{ margin: '4px 0', fontSize: '14px' }}>Voucher Ref: <strong style={{ letterSpacing: '0.5px', color: 'var(--maroon)' }}>{scannedData?.token}</strong></p>
+                        <p style={{ margin: '4px 0', fontSize: '14px', color: '#666', fontStyle: 'italic' }}>Note: Cloud routing queries parameters dynamically during authorization confirmations.</p>
+                      </div>
+                      <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                        <button className="action-btn approve" onClick={() => handleRedemption('approve')} style={{ flex: 1, padding: '10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                          Confirm & Redeem
+                        </button>
+                        <button className="action-btn reject" onClick={() => handleRedemption('reject')} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── NEW: HARDWARE FAILURE MANUAL INPUT SECTION ────────────────────── */}
                 {scanStatus === 'idle' && (
-                  <div className="scanner-placeholder" onClick={() => setScanStatus('scanning')} style={{ cursor: 'pointer', textAlign: 'center' }}>
-                    <QrCode size={48} color="var(--gold)" style={{ marginBottom: '10px' }} />
-                    <p style={{ fontWeight: 'bold', fontSize: '13px' }}>TAP TO START SCANNER</p>
-                  </div>
-                )}
-                
-                {scanStatus === 'scanning' && <div id="reader"></div>}
-                
-                {scanStatus === 'detected' && (
-                  <div className="scan-result-card" style={{ width: '100%', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
-                    <div className="student-info">
-                      <h4 className="maroon-text" style={{ margin: '0 0 12px 0', fontSize: '1.1rem', fontWeight: 'bold' }}>Claim Package Detected</h4>
-                      <p style={{ margin: '4px 0', fontSize: '14px' }}>Student No: <strong>{scannedData?.studentNum}</strong></p>
-                      <p style={{ margin: '4px 0', fontSize: '14px' }}>Items: <span style={{ color: '#555' }}>{scannedData?.items}</span></p>
-                      <p style={{ margin: '4px 0', fontSize: '14px' }}>Cost: <strong style={{ color: 'var(--maroon)' }}>{scannedData?.cost} pts</strong></p>
-                    </div>
-                    <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                      <button className="action-btn approve" onClick={() => handleRedemption('approve')} style={{ flex: 1, padding: '10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        Confirm & Deduct
-                      </button>
-                      <button className="action-btn reject" onClick={() => handleRedemption('reject')} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        Cancel
+                  <form onSubmit={handleManualSubmit} style={{ borderTop: '1px dashed #ddd', paddingTop: '20px', width: '100%' }}>
+                    <p style={{ fontSize: '0.8rem', color: '#666', fontWeight: 'bold', marginBottom: '10px', textAlign: 'left' }}>
+                      Trouble scanning? Enter manually.
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Reference Code" 
+                        value={manualRefCode}
+                        onChange={(e) => setManualRefCode(e.target.value)}
+                        style={{ flex: 1, padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                      />
+                      <button 
+                        type="submit" 
+                        className="log-btn-primary log-btn" 
+                        style={{ width: 'auto', padding: '0 20px', whiteSpace: 'nowrap', margin: 0, height: '45px' }}
+                      >
+                        Process Code
                       </button>
                     </div>
-                  </div>
+                  </form>
                 )}
+
               </div>
             </div>
           </div>
