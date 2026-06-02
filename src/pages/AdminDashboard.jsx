@@ -506,17 +506,31 @@ const AdminDashboard = () => {
                   {scanStatus === 'scanning' && <div id="reader" style={{ width: '100%' }}></div>}
                   
                   {scanStatus === 'detected' && (
-                    <div className="scan-result-card" style={{ width: '100%', background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
+                    <div className="scan-result-card" style={{ width: '100%', background: '#fff', padding: '20px', borderRadius: '8px', border: '1px solid #eee', textAlign: 'left' }}>
                       <div className="student-info">
-                        <h4 className="maroon-text" style={{ margin: '0 0 12px 0', fontSize: '1.1rem', fontWeight: 'bold' }}>Claim Package Verification Required</h4>
-                        <p style={{ margin: '4px 0', fontSize: '14px' }}>Voucher Ref: <strong style={{ letterSpacing: '0.5px', color: 'var(--maroon)' }}>{scannedData?.token}</strong></p>
-                        <p style={{ margin: '4px 0', fontSize: '14px', color: '#666', fontStyle: 'italic' }}>Note: Cloud routing queries parameters dynamically during authorization confirmations.</p>
+                        <h4 className="maroon-text" style={{ margin: '0 0 15px 0', fontSize: '1.15rem', fontWeight: 'bold', borderBottom: '2px solid var(--maroon)', paddingBottom: '6px' }}>
+                          Claim Package Verification Required
+                        </h4>
+                        
+                        <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                          Voucher Ref: <strong style={{ letterSpacing: '0.5px', color: 'var(--maroon)' }}>{scannedData?.token}</strong>
+                        </p>
+                        <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                          Student No: <strong style={{ color: '#333' }}>{scannedData?.studentNum || 'N/A'}</strong>
+                        </p>
+                        <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                          Items to Claim: <span style={{ color: '#555', fontWeight: '500' }}>{scannedData?.items || 'No items listed'}</span>
+                        </p>
+                        <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                          Deduction Cost: <strong style={{ color: '#16a34a' }}>{scannedData?.cost || 0} pts</strong>
+                        </p>
                       </div>
+
                       <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                        <button className="action-btn approve" onClick={() => handleRedemption('approve')} style={{ flex: 1, padding: '10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        <button className="action-btn approve" onClick={() => handleRedemption('approve')} style={{ flex: 1, padding: '11px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
                           Confirm & Redeem
                         </button>
-                        <button className="action-btn reject" onClick={() => handleRedemption('reject')} style={{ flex: 1, padding: '10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        <button className="action-btn reject" onClick={() => handleRedemption('reject')} style={{ flex: 1, padding: '11px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
                           Cancel
                         </button>
                       </div>
