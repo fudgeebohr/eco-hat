@@ -10,22 +10,17 @@ const RoleSelection = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="logo-circle">
+          <button className="logo-circle" onClick={() => navigate('/admin-login')}>
             <Leaf size={32} color="#D4AF37" />
-          </div>
+          </button>
           <h2 style={{ color: '#800000' }}>ECO-HAT Portal</h2>
-          <p>Please select your access level</p>
+          <p>Welcome to ECO-HAT Ecosystem</p>
         </div>
 
         <div className="role-options">
           <button className="role-btn" onClick={() => navigate('/login')}>
             <User size={24} />
             <span>Student User</span>
-          </button>
-
-          <button className="role-btn" onClick={() => navigate('/admin-login')}>
-            <ShieldCheck size={24} />
-            <span>Administrator</span>
           </button>
         </div>
       </div>
