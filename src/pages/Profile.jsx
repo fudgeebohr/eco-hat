@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Award, ShieldCheck, MapPin, Edit3, Settings, X, Ban, FileText } from 'lucide-react';
+import { User, Award, ShieldCheck, MapPin, Edit3, Settings, X, Ban, FileText } from 'lucide-react';
 import './Profile.css';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -11,7 +11,8 @@ const Profile = ({ onProfileUpdate }) => {
     fullName: "Loading...",
     programAndYear: "Loading...",
     studentNumber: "Loading...",
-    rank: "Loading...",
+    rankTitle: "Loading...", // ─── UPDATED: Directly bound to backend parameters
+    rankClass: "rank-green",  // ─── UPDATED: Handled atomically via server response
     totalPointsEarned: 0,
     points: 0,
     privacyMode: false,
@@ -24,7 +25,6 @@ const Profile = ({ onProfileUpdate }) => {
     studentNumber: ""
   });
 
-  // ─── NEW: TRANSPARENCY REPORT FOR STUDENTS STATES ───────────────────────
   const [transparencyLogs, setTransparencyLogs] = useState([]);
   const [isTransparencyModalOpen, setIsTransparencyModalOpen] = useState(false);
   const [activeReceiptPreviewUrl, setActiveReceiptPreviewUrl] = useState(null);
@@ -39,7 +39,8 @@ const Profile = ({ onProfileUpdate }) => {
             fullName: response.data.fullName || "N/A", 
             programAndYear: response.data.programAndYear || "N/A",
             studentNumber: response.data.studentNumber || "N/A",
-            rank: response.data.rank,
+            rankTitle: response.data.rankTitle || "Green Guardian", // From backend schema tracking calculation
+            rankClass: response.data.rankClass || "rank-green",     // Directly formatted styling class
             totalPointsEarned: response.data.totalPointsEarned || 0,
             points: response.data.points || 0,
             privacyMode: response.data.privacyMode || false,
@@ -66,20 +67,6 @@ const Profile = ({ onProfileUpdate }) => {
     }
   };
 
-  const getRankDetails = (totalPointsEarned) => {
-    if (totalPointsEarned <= 150) {
-      return { title: "Green Guardian", className: "rank-green" };
-    } else if (totalPointsEarned >= 151 && totalPointsEarned <= 250) {
-      return { title: "Eco Crusader", className: "rank-earth-blue" };
-    } else if (totalPointsEarned >= 251 && totalPointsEarned <= 350) {
-      return { title: "Planet Protector", className: "rank-gold" };
-    } else {
-      return { title: "Nature Knight", className: "rank-magenta" };
-    }
-  };
-
-  const { title: rankTitle, className: rankClass } = getRankDetails(userData.totalPointsEarned);
-
   const handleEditClick = () => {
     setEditFormData({
       fullName: userData.fullName !== "Loading..." && userData.fullName !== "N/A" ? userData.fullName : "",
@@ -99,6 +86,7 @@ const Profile = ({ onProfileUpdate }) => {
     try {
       await api.put('/profile', editFormData); 
       
+      // Refresh user view fields locally while preserving point tracking arrays
       setUserData(prev => ({
         ...prev,
         fullName: editFormData.fullName,
@@ -155,8 +143,9 @@ const Profile = ({ onProfileUpdate }) => {
           <div className="profile-main-info">
             <h2>{userData.fullName?.toUpperCase()}</h2>
             <p><MapPin size={14} /> PUP Biñan Campus</p>
-            <span className={`rank-badge ${rankClass}`}>
-              <Award size={14} /> {rankTitle}
+            {/* ─── CONSUMES CLEAN BACKEND VALUES DIRECTLY ─────────────────── */}
+            <span className={`rank-badge ${userData.rankClass}`}>
+              <Award size={14} /> {userData.rankTitle}
             </span>
           </div>
         </div>
@@ -211,7 +200,6 @@ const Profile = ({ onProfileUpdate }) => {
           </div>
           <div className="settings-options">
             
-            {/* PRIVACY MODE ROW */}
             <div className="setting-row">
               <div>
                 <p className="setting-name">Privacy Mode</p>
@@ -224,7 +212,6 @@ const Profile = ({ onProfileUpdate }) => {
               />
             </div>
 
-            {/* TRANSPARENCY REPORT GENERATION LINE VIEW */}
             <div className="setting-row" onClick={handleOpenTransparencyReport} style={{ cursor: 'pointer', borderTop: '1px solid #f5f5f5', borderBottom: '1px solid #f5f5f5', padding: '15px 0' }}>
               <div>
                 <p className="setting-name" style={{ color: 'var(--maroon)' }}>Transparency Report</p>
@@ -235,7 +222,6 @@ const Profile = ({ onProfileUpdate }) => {
               </button>
             </div>
 
-            {/* DEACTIVATE ACCOUNT ROW */}
             <div className="setting-row" onClick={handleDeactivateAccount} style={{ cursor: 'pointer', paddingTop: '15px' }}>
               <div>
                 <p className="setting-name" style={{ color: '#dc2626' }}>Deactivate Account</p>
@@ -248,7 +234,7 @@ const Profile = ({ onProfileUpdate }) => {
 
           </div>
         </div>
-      </div> {/* ◄ FIX 1: This closed grid layout bracket belongs inside the master return chain wrapper */}
+      </div> 
 
       {/* --- EDIT PROFILE MODAL --- */}
       {isModalOpen && (
@@ -333,7 +319,6 @@ const Profile = ({ onProfileUpdate }) => {
                           alt="Receipt" 
                           onClick={() => setActiveReceiptPreviewUrl(log.receiptUrl)}
                           style={{ width: '38px', height: '38px', borderRadius: '4px', objectFit: 'cover', cursor: 'pointer', border: '1px solid #ccc' }}
-                          title="Click to zoom receipt document image"
                         />
                       ) : (
                         <div style={{ width: '38px', height: '38px', borderRadius: '4px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: '9px', fontWeight: 'bold', border: '1px dashed #eee' }}>N/A</div>
@@ -355,7 +340,7 @@ const Profile = ({ onProfileUpdate }) => {
         </div>
       )}
 
-      {/* --- RECEIPT DOCUMENT LIGHTBOX POPUP MAXIMIZATION LIGHTBOX --- */}
+      {/* --- RECEIPT DOCUMENT LIGHTBOX POPUP --- */}
       {activeReceiptPreviewUrl && (
         <div className="modal-overlay" onClick={() => setActiveReceiptPreviewUrl(null)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 4000, backdropFilter: 'blur(6px)' }}>
           <div style={{ position: 'relative', maxWidth: '85vw', maxHeight: '85vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
@@ -373,8 +358,7 @@ const Profile = ({ onProfileUpdate }) => {
           </div>
         </div>
       )}
-
-    </div> // ◄ FIX 2: Closes the outer <div className="profile-container"> wrapper layout tag correctly
+    </div>
   );
 };
 
