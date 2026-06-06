@@ -19,4 +19,9 @@ export const getUserData = (studentNumber) => api.get(`/user-history/${studentNu
 export const getProfile = (studentNumber) => api.get(`/profile?studentNumber=${studentNumber}`);
 export const getLeaderboard = () => api.get('/leaderboard');
 
+// Kiosk session APIs
+export const startKioskSession = (kioskId) => api.post('/kiosk/start-session', { kioskId });
+export const sendKioskCommand = (sessionId, command) => api.post('/kiosk/command', { sessionId, command });
+export const getKioskSessionStatus = (sessionId) => api.get(`/kiosk/session-status?sessionId=${sessionId}`);
+
 export default api;

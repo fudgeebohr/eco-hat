@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import IdleLogoutTimeout from './components/IdleLogoutTimeout'; 
 import ForgotPassword from './pages/ForgotPassword'; 
+import KioskControl from './pages/KioskControl';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/kiosk" element={<KioskControl />} />
           
           {/* Admin Routes */}
           <Route path="/admin-login" element={<AdminLogin />} />
