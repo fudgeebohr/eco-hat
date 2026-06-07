@@ -550,7 +550,7 @@ const AdminDashboard = () => {
 
                 {/* ─── NEW: HARDWARE FAILURE MANUAL INPUT SECTION ────────────────────── */}
                 {scanStatus === 'idle' && (
-                  <form onSubmit={handleManualSubmit} style={{ borderTop: '1px dashed #ddd', paddingTop: '20px', width: '100%' }}>
+                  <form onSubmit={handleVerifyConfirm} style={{ borderTop: '1px dashed #ddd', paddingTop: '20px', width: '100%' }}>
                     <p style={{ fontSize: '0.8rem', color: '#666', fontWeight: 'bold', marginBottom: '10px', textAlign: 'left' }}>
                       Trouble scanning? Enter manually.
                     </p>
