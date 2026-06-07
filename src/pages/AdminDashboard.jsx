@@ -255,27 +255,37 @@ const AdminDashboard = () => {
     }
   };
 
-  // ─── MANUAL REFERENCE CODE HANDLING FALLBACK ──────────────────────────────
-  const handleManualSubmit = async (e) => {
-    e.preventDefault();
-    if (!manualRefCode.trim()) return alert("Please enter a valid reference code.");
+ const handleVerifyConfirm = async () => {
+  try {
+    const payload = {
+      // mapping parameters for QR path code
+      qrTokenString: scannedData.token, 
+      
+      // mapping parameters for your newly built manual path code
+      token: scannedData.token, 
+      studentNumber: scannedData.studentNum,
+      totalCost: scannedData.cost,
+      summary: scannedData.items
+    };
 
-    const sanitizedCode = manualRefCode.trim().toUpperCase();
+    // 1. Determine which endpoint to hit based on how the data was retrieved
+    // If it has 'studentNum' as a root key, it came from your manual lookup route!
+    const endpoint = scannedData.studentNum 
+      ? '/admin/confirm-manual-redeem' 
+      : '/admin/verify-redemption';
 
-    try {
-      // Hit the live lookup router we built
-      const response = await api.get(`/admin/lookup-voucher/${sanitizedCode}`);
+    const response = await api.post(endpoint, payload);
 
-      if (response.data.success) {
-        // Auto-fill all parameters smoothly from the matching database schema
-        setScannedData(response.data.voucher);
-        setScanStatus('detected'); // Pop open the verification overlay card
-        setManualRefCode('');      // Flush text field clean
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to locate voucher reference data parameters.");
+    if (response.data.success) {
+      alert(response.data.message);
+      setScanStatus('idle'); // Close out the overlay card
+      setScannedData(null);  // Reset state definitions clean
     }
-  };
+  } catch (err) {
+    console.error("Redemption confirmation crashed:", err);
+    alert(err.response?.data?.message || "Supplies verification processing dropped.");
+  }
+};
 
   return (
     <div className="admin-wrapper">
