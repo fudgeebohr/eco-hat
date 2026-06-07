@@ -4,6 +4,7 @@ import axios from 'axios';
 import { User, Lock, Leaf, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Added Eye & EyeOff
 import './Auth.css';
 import api from '../api';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const Login = () => {
   const [studentNumber, setStudentNumber] = useState('');
@@ -15,6 +16,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +31,8 @@ const Login = () => {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('studentName', response.data.fullName);
         localStorage.setItem('role', 'user');
-        navigate('/dashboard');
+        const redirectTo = decodeURIComponent(searchParams.get('redirect') || '/dashboard');
+        navigate(redirectTo);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');

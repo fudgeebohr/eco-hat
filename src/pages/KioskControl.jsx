@@ -49,7 +49,7 @@ const KioskControl = () => {
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
-      navigate(`/login?redirect=/kiosk?id=${kioskId}`);
+      navigate(`/login?redirect=${encodeURIComponent('/kiosk?id=' + kioskId)}`);
       return;
     }
     startSession();
