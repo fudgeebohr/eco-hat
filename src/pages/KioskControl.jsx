@@ -23,9 +23,10 @@ const KioskControl = () => {
   // Start a kiosk session
   router.post('/kiosk/start-session', authMiddleware, async (req, res) => {
     try {
-        const { kioskId, pin } = req.body;   
+        const { kioskId, pin } = req.body;   // ← now includes pin
         const studentNumber = req.user.studentNumber;
 
+        // 1. Validate pairing PIN (proves physical presence)
         const pairing = await db.collection('kiosk_pairing').findOne({ kioskId });
         if (!pairing || pairing.code !== pin || pairing.expiresAt < new Date()) {
             return res.status(403).json({ 
