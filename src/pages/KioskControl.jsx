@@ -21,48 +21,31 @@ const KioskControl = () => {
   const [bottleCount, setBattleCount] = useState(0);
 
   // Start a kiosk session
-  router.post('/kiosk/start-session', authMiddleware, async (req, res) => {
+  const startSession = useCallback(async () => {
     try {
-        const { kioskId, pin } = req.body;   // ← now includes pin
-        const studentNumber = req.user.studentNumber;
-
-        // 1. Validate pairing PIN (proves physical presence)
-        const pairing = await db.collection('kiosk_pairing').findOne({ kioskId });
-        if (!pairing || pairing.code !== pin || pairing.expiresAt < new Date()) {
-            return res.status(403).json({ 
-                message: 'Invalid or expired code. Please enter the current code shown on the kiosk.' 
-            });
-        }
-
-        const user = await User.findOne({ studentNumber });
-        if (!user) return res.status(404).json({ message: 'Student not found' });
-        if (user.bannedUntil && user.bannedUntil > new Date()) {
-            const hrs = ((user.bannedUntil - new Date()) / 3600000).toFixed(1);
-            return res.status(403).json({ message: `Account banned for ${hrs} more hours` });
-        }
-
-        const existing = await db.collection('kiosk_sessions').findOne({
-            kioskId, status: { $in: ['pending', 'active'] }, expiresAt: { $gt: new Date() }
-        });
-        if (existing) {
-            return res.status(409).json({ message: 'Kiosk is busy' });
-        }
-
-        const session = await KioskSession.create({
-            kioskId, studentNumber, status: 'pending',
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-        });
-
-        res.json({
-            sessionId: session._id,
-            studentName: user.fullName,
-            points: user.points,
-            warnings: user.warnings || 0,
-        });
+      setStatus('connecting');
+      const res = await api.post('/kiosk/start-session', { kioskId });
+      if (res.data.sessionId) {
+        setSessionId(res.data.sessionId);
+        setStudentName(res.data.studentName || '');
+        setPoints(res.data.points || 0);
+        setWarnings(res.data.warnings || 0);
+        setStatus('ready');
+      }
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+      const msg = err.response?.data?.message || 'Failed to connect to kiosk';
+      if (msg.includes('banned')) {
+        setStatus('banned');
+        setResult(msg);
+      } else if (msg.includes('busy') || err.response?.status === 409) {
+        setStatus('busy');
+        setResult('Another student is currently using this kiosk. Please wait for them to finish.');
+      } else {
+        setError(msg);
+        setStatus('error');
+      }
     }
-});
+  }, [kioskId]);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
