@@ -3,7 +3,7 @@ import axios from 'axios';
 import { User, Lock, Leaf, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Added Eye & EyeOff
 import './Auth.css';
 import api from '../api';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 
 const Login = () => {
   const [studentNumber, setStudentNumber] = useState('');
