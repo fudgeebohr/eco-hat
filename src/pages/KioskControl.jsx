@@ -27,7 +27,7 @@ const KioskControl = () => {
     try {
       setStatus('connecting');
       setPinError('');
-      const res = await api.post('/auth/kiosk/start-session', { kioskId, pin: enteredPin });
+      const res = await api.post('/kiosk/start-session', { kioskId, pin: enteredPin });
       if (res.data.sessionId) {
         setSessionId(res.data.sessionId);
         setStudentName(res.data.studentName || '');
@@ -75,7 +75,7 @@ const KioskControl = () => {
     if (!sessionId) return;
     const interval = setInterval(async () => {
       try {
-        const res = await api.get(`/auth/kiosk/session-status?sessionId=${sessionId}`);
+        const res = await api.get(`/kiosk/session-status?sessionId=${sessionId}`);
         const data = res.data;
         if (data.kioskStatus) setStatus(data.kioskStatus);
         if (data.lastResult) setResult(data.lastResult);
@@ -97,7 +97,7 @@ const KioskControl = () => {
   const sendCommand = async (command) => {
     if (!sessionId) return;
     try {
-      await api.post('/auth/kiosk/command', { sessionId, command });
+      await api.post('/kiosk/command', { sessionId, command });
     } catch (err) {
       console.error('Command failed:', err);
     }
