@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { User, Lock, Leaf, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Added Eye & EyeOff
 import './Auth.css';
