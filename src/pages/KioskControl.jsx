@@ -12,19 +12,22 @@ const KioskControl = () => {
   const navigate = useNavigate();
 
   const [sessionId, setSessionId] = useState(null);
-  const [status, setStatus] = useState('connecting'); // connecting, ready, gate_open, countdown, scanning, accepted, rejected, ask_another, banned, completed, error
+  const [status, setStatus] = useState('pin_entry'); // pin_entry, connecting, ready, ...
   const [result, setResult] = useState('');
   const [points, setPoints] = useState(0);
   const [warnings, setWarnings] = useState(0);
   const [studentName, setStudentName] = useState('');
   const [error, setError] = useState('');
   const [bottleCount, setBattleCount] = useState(0);
+  const [pin, setPin] = useState('');
+  const [pinError, setPinError] = useState('');
 
-  // Start a kiosk session
-  const startSession = useCallback(async () => {
+  // Start a kiosk session (requires PIN for physical presence)
+  const startSession = useCallback(async (enteredPin) => {
     try {
       setStatus('connecting');
-      const res = await api.post('/kiosk/start-session', { kioskId });
+      setPinError('');
+      const res = await api.post('/auth/kiosk/start-session', { kioskId, pin: enteredPin });
       if (res.data.sessionId) {
         setSessionId(res.data.sessionId);
         setStudentName(res.data.studentName || '');
@@ -39,7 +42,11 @@ const KioskControl = () => {
         setResult(msg);
       } else if (msg.includes('busy') || err.response?.status === 409) {
         setStatus('busy');
-        setResult('Another student is currently using this kiosk. Please wait for them to finish.');
+        setResult('Another student is currently using this kiosk. Please wait.');
+      } else if (msg.toLowerCase().includes('pin') || msg.toLowerCase().includes('code')) {
+        setStatus('pin_entry');
+        setPinError('Invalid or expired code. Make sure you are at the kiosk.');
+        setPin('');
       } else {
         setError(msg);
         setStatus('error');
@@ -47,12 +54,20 @@ const KioskControl = () => {
     }
   }, [kioskId]);
 
+  const handlePinSubmit = () => {
+    if (pin.length !== 4) {
+      setPinError('Enter the 4-digit code shown on the kiosk screen');
+      return;
+    }
+    startSession(pin);
+  };
+
   useEffect(() => {
     if (!localStorage.getItem('token')) {
       navigate(`/login?redirect=${encodeURIComponent('/kiosk?id=' + kioskId)}`);
       return;
     }
-    startSession();
+    // Do NOT auto-start — wait for PIN entry (physical presence proof)
   }, []);
 
   // Poll kiosk status
@@ -60,7 +75,7 @@ const KioskControl = () => {
     if (!sessionId) return;
     const interval = setInterval(async () => {
       try {
-        const res = await api.get(`/kiosk/session-status?sessionId=${sessionId}`);
+        const res = await api.get(`/auth/kiosk/session-status?sessionId=${sessionId}`);
         const data = res.data;
         if (data.kioskStatus) setStatus(data.kioskStatus);
         if (data.lastResult) setResult(data.lastResult);
@@ -82,7 +97,7 @@ const KioskControl = () => {
   const sendCommand = async (command) => {
     if (!sessionId) return;
     try {
-      await api.post('/kiosk/command', { sessionId, command });
+      await api.post('/auth/kiosk/command', { sessionId, command });
     } catch (err) {
       console.error('Command failed:', err);
     }
