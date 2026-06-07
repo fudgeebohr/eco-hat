@@ -104,6 +104,7 @@ const KioskControl = () => {
   };
 
   const statusConfig = {
+    pin_entry: { icon: <Shield size={48} />, title: 'Enter kiosk code', color: '#800000', subtitle: 'Type the code shown on the kiosk screen' },
     connecting: { icon: <Loader className="spin" size={48} />, title: 'Connecting to kiosk...', color: '#888' },
     ready: { icon: <Recycle size={48} />, title: 'Ready to deposit', color: '#4caf50' },
     gate_open: { icon: <Recycle size={48} />, title: 'Gate is open', color: '#2196f3', subtitle: 'Insert your PET bottle now' },
@@ -175,6 +176,30 @@ const KioskControl = () => {
       {/* Action buttons */}
       <div style={{ width: '100%', maxWidth: '400px' }}>
         
+        {status === 'pin_entry' && (
+          <div>
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder="0000"
+              autoFocus
+              style={{ width: '100%', padding: '16px', fontSize: '28px', textAlign: 'center', letterSpacing: '12px', border: '2px solid #800000', borderRadius: '12px', marginBottom: '8px', boxSizing: 'border-box' }}
+            />
+            {pinError && (
+              <p style={{ color: '#f44336', fontSize: '13px', margin: '0 0 8px', textAlign: 'center' }}>{pinError}</p>
+            )}
+            <button
+              onClick={handlePinSubmit}
+              style={{ width: '100%', padding: '16px', background: '#800000', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              Connect to kiosk
+            </button>
+          </div>
+        )}
+
         {status === 'ready' && (
           <button onClick={() => sendCommand('start_deposit')} style={{ width: '100%', padding: '16px', background: '#800000', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <Recycle size={20} /> Start deposit <ChevronRight size={18} />
