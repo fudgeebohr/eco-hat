@@ -34,7 +34,7 @@ const AdminDashboard = () => {
   const [isTransparencyModalOpen, setIsTransparencyModalOpen] = useState(false); 
   const [activeReceiptPreviewUrl, setActiveReceiptPreviewUrl] = useState(null); 
 
-  // ─── NEW: DOM ELEMENT TARGET REFERENCES FOR SMOOTH SCROLL & GLOW ──────────
+  // ─── DOM ELEMENT TARGET REFERENCES FOR SMOOTH SCROLL & GLOW ──────────────
   const overviewRef = useRef(null);
   const inventoryRef = useRef(null);
   const leaderboardRef = useRef(null);
@@ -92,23 +92,19 @@ const AdminDashboard = () => {
     }
   }, [scanStatus]);
 
-  // ─── NEW: SMOOTH JUMP SCROLL & ELEMENT HIGHLIGHT TRIGGER ENGINE ────────────
+  // ─── SMOOTH JUMP SCROLL & ELEMENT HIGHLIGHT TRIGGER ENGINE ────────────────
   const handleSidebarTabClick = (targetRef) => {
     if (!targetRef || !targetRef.current) return;
 
-    // 1. Close sidebar menu instantly on mobile screens
     setIsSidebarOpen(false);
 
-    // 2. Smoothly scroll into viewport context (perfect for mobile sizing layout views)
     targetRef.current.scrollIntoView({
       behavior: 'smooth',
-      block: 'center' // Centers card vertically on screens
+      block: 'center'
     });
 
-    // 3. Apply class glow highlight for web view users
     targetRef.current.classList.add('highlight-glow');
 
-    // Remove the CSS animation class after it completes running so it can be re-triggered
     setTimeout(() => {
       if (targetRef.current) {
         targetRef.current.classList.remove('highlight-glow');
@@ -116,13 +112,11 @@ const AdminDashboard = () => {
     }, 2000);
   };
 
-  // LAUNCH MANAGEMENT MODAL HANDLER
   const openEditModal = (item) => {
     setEditingItem(item);
     setInputStockValue(item.stock);
   };
 
-  // SAVE REVISED INVENTORY STOCK COUNT VALUES
   const handleSaveStockUpdate = async () => {
     try {
       const finalStockValue = inputStockValue === '' ? 0 : Number(inputStockValue);
@@ -142,7 +136,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // HANDLE SUBMISSION LOG ENTRIES UP TO CLOUD ROUTERS
   const handleLogTransactionSubmit = async () => {
     if (!inputAmount || !inputDesc) {
       return alert("Please specify both an entry amount and transaction description details.");
@@ -234,48 +227,23 @@ const AdminDashboard = () => {
       setScannedData(null);
       return;
     }
-
-    try {
-      const response = await api.post('/admin/verify-redemption', {
-        qrTokenString: scannedData.token,      
-        studentNumber: scannedData.studentNum, 
-        totalCost: scannedData.cost,           
-        summary: scannedData.items             
-      });
-
-      if (response.data.success) {
-        alert(response.data.message);
-        refreshDashboardData(); 
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || "An error occurred during verification.");
-    } finally {
-      setScanStatus('idle');
-      setScannedData(null);
-    }
+    // Fallback path wrapper for legacy structural calls
+    await handleVerifyConfirm();
   };
 
-const handleManualSubmit = async (e) => {
+  const handleManualSubmit = async (e) => {
     e.preventDefault();
     if (!manualRefCode.trim()) return alert("Please enter a valid reference code.");
 
     const sanitizedCode = manualRefCode.trim().toUpperCase();
 
     try {
-      // 1. Hit your live backend lookup router
       const response = await api.get(`/admin/lookup-voucher/${sanitizedCode}`);
 
       if (response.data.success) {
-        // 2. Store the data inside scannedData
         setScannedData(response.data.voucher);
-        
-        // 3. CRITICAL: Toggle your UI state to display the hidden confirmation layout card!
-        // Double-check if your file uses setScanStatus('detected') or a boolean like setIsModalOpen(true)
         setScanStatus('detected'); 
-        
-        // 4. Flush the text input box clean
         setManualRefCode(''); 
-        
         console.log("Voucher loaded onto staging card:", response.data.voucher);
       }
     } catch (err) {
@@ -284,38 +252,35 @@ const handleManualSubmit = async (e) => {
     }
   };
 
- const handleVerifyConfirm = async () => {
-  // Ensure scannedData exists before reading properties to prevent crashes
-  if (!scannedData) return alert("No active voucher data detected.");
+  const handleVerifyConfirm = async () => {
+    if (!scannedData) return alert("No active voucher data detected.");
 
-  try {
-    const payload = {
-      // 1. Map the token reference universally
-      qrTokenString: scannedData.token, 
-      token: scannedData.token, 
-      
-      // 2. Add fallbacks to accept either the backend model key or the lookup alias key
-      studentNumber: scannedData.studentNumber || scannedData.studentNum,
-      totalCost: scannedData.totalCost !== undefined ? scannedData.totalCost : scannedData.cost,
-      summary: scannedData.itemsSummary || scannedData.items
-    };
+    try {
+      const payload = {
+        qrTokenString: scannedData.token, 
+        token: scannedData.token, 
+        studentNumber: scannedData.studentNumber || scannedData.studentNum,
+        totalCost: scannedData.totalCost !== undefined ? scannedData.totalCost : scannedData.cost,
+        summary: scannedData.itemsSummary || scannedData.items
+      };
 
-    // 3. Select the correct endpoint safely
-    const isManualInput = scannedData.studentNum !== undefined;
-    const endpoint = isManualInput ? '/admin/confirm-manual-redeem' : '/admin/verify-redemption';
+      const isManualInput = scannedData.studentNum !== undefined;
+      const endpoint = isManualInput ? '/admin/confirm-manual-redeem' : '/admin/verify-redemption';
 
-    const response = await api.post(endpoint, payload);
+      const response = await api.post(endpoint, payload);
 
-    if (response.data.success) {
-      alert(response.data.message);
-      setScanStatus('idle'); // Close the overlay card gracefully
-      setScannedData(null);  // Clear state entries
+      if (response.data.success) {
+        alert(response.data.message);
+        refreshDashboardData();
+      }
+    } catch (err) {
+      console.error("Redemption confirmation crashed:", err);
+      alert(err.response?.data?.message || "Supplies verification processing dropped.");
+    } finally {
+      setScanStatus('idle'); 
+      setScannedData(null);  
     }
-  } catch (err) {
-    console.error("Redemption confirmation crashed:", err);
-    alert(err.response?.data?.message || "Supplies verification processing dropped.");
-  }
-};
+  };
 
   return (
     <div className="admin-wrapper">
@@ -328,7 +293,6 @@ const handleManualSubmit = async (e) => {
           <X className="sidebar-close" onClick={toggleSidebar} size={24} />
         </div>
         
-        {/* ─── UPDATED: DYNAMIC SHORTCUT NAVIGATION LINKS LAYOUT ────────────── */}
         <nav className="sidebar-links">
           <div className="admin-menu-item active" onClick={() => handleSidebarTabClick(overviewRef)}>
             <LayoutDashboard size={20}/> Overview
@@ -387,7 +351,6 @@ const handleManualSubmit = async (e) => {
             {/* Split Row: Inventory & Leaderboard Anchor Nodes */}
             <div className="dashboard-split-row">
               
-              {/* ATTACHED: inventoryRef anchor */}
               <div className="admin-card" ref={inventoryRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
                 <div className="card-header-flex">
                   <h3 className="header-title"><Package size={18}/> Inventory Stock</h3>
@@ -411,7 +374,6 @@ const handleManualSubmit = async (e) => {
                 </ul>
               </div>
 
-              {/* ATTACHED: leaderboardRef anchor */}
               <div className="admin-card" ref={leaderboardRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
                 <div className="card-header-flex" style={{ borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '15px' }}>
                   <h3 className="header-title" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold' }}>
@@ -454,11 +416,9 @@ const handleManualSubmit = async (e) => {
                   </table>
                 </div>
               </div>
-
             </div>
 
             {/* FULL WIDTH: TRANSPARENCY REPORT CARD */}
-            {/* ATTACHED: transparencyRef anchor */}
             <div className="admin-card" ref={transparencyRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
               <div className="card-header-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 className="header-title" style={{ margin: 0 }}><FileText size={18}/> Transparency Report</h3>
@@ -527,14 +487,12 @@ const handleManualSubmit = async (e) => {
             </div>
 
             {/* COMPACT: REDEMPTION SCANNER */}
-            {/* ATTACHED: scannerRef anchor */}
             <div className="admin-card standalone-card" ref={scannerRef} style={{ scrollMarginTop: '20px', transition: 'all 0.3s' }}>
               <div className="card-header-flex">
                 <h3><QrCode size={18}/> Redemption Control Hub</h3>
               </div>
               <div className="scanner-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '15px' }}>
                 
-                {/* CAMERA VIEW CONTROL BOX AREA */}
                 <div style={{ minHeight: '260px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
                   {scanStatus === 'idle' && (
                     <div className="scanner-placeholder" onClick={() => setScanStatus('scanning')} style={{ cursor: 'pointer', textAlign: 'center' }}>
@@ -555,22 +513,18 @@ const handleManualSubmit = async (e) => {
                         <p style={{ margin: '8px 0', fontSize: '14px' }}>
                           Voucher Ref: <strong style={{ letterSpacing: '0.5px', color: 'var(--maroon)' }}>{scannedData?.token}</strong>
                         </p>
-                        {/* FIXED: Resolves backend alias properties for student identification mapping */}
                         <p style={{ margin: '8px 0', fontSize: '14px' }}>
                           Student No: <strong style={{ color: '#333' }}>{scannedData?.studentNum || scannedData?.studentNumber || 'N/A'}</strong>
                         </p>
-                        {/* FIXED: Resolves backend items text tracking summaries properties string payload */}
                         <p style={{ margin: '8px 0', fontSize: '14px' }}>
                           Items to Claim: <span style={{ color: '#555', fontWeight: '500' }}>{scannedData?.items || scannedData?.itemsSummary || 'No items listed'}</span>
                         </p>
-                        {/* FIXED: Resolves backend cost vs totalCost metrics variations properties */}
                         <p style={{ margin: '8px 0', fontSize: '14px' }}>
                           Deduction Cost: <strong style={{ color: '#16a34a' }}>{scannedData?.cost !== undefined ? scannedData.cost : scannedData?.totalCost || 0} pts</strong>
                         </p>
                       </div>
 
                       <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                        {/* FIXED: Calls handleVerifyConfirm directly to process points write down */}
                         <button className="action-btn approve" onClick={handleVerifyConfirm} style={{ flex: 1, padding: '11px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
                           Confirm & Redeem
                         </button>
@@ -582,9 +536,7 @@ const handleManualSubmit = async (e) => {
                   )}
                 </div>
 
-                {/* ─── NEW: HARDWARE FAILURE MANUAL INPUT SECTION ────────────────────── */}
                 {scanStatus === 'idle' && (
-                  /* FIXED: Changed target from handleVerifyConfirm to handleManualSubmit for initial search lookup steps */
                   <form onSubmit={handleManualSubmit} style={{ borderTop: '1px dashed #ddd', paddingTop: '20px', width: '100%' }}>
                     <p style={{ fontSize: '0.8rem', color: '#666', fontWeight: 'bold', marginBottom: '10px', textAlign: 'left' }}>
                       Trouble scanning? Enter manually.
@@ -607,9 +559,12 @@ const handleManualSubmit = async (e) => {
                     </div>
                   </form>
                 )}
-
               </div>
             </div>
+
+          </div>
+        </div>
+      </div>
 
       {/* INVENTORY EDIT CONTROL OVERLAY MODAL INTERFACE */}
       {editingItem && (
