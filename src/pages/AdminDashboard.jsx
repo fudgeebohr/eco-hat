@@ -255,6 +255,35 @@ const AdminDashboard = () => {
     }
   };
 
+const handleManualSubmit = async (e) => {
+    e.preventDefault();
+    if (!manualRefCode.trim()) return alert("Please enter a valid reference code.");
+
+    const sanitizedCode = manualRefCode.trim().toUpperCase();
+
+    try {
+      // 1. Hit your live backend lookup router
+      const response = await api.get(`/admin/lookup-voucher/${sanitizedCode}`);
+
+      if (response.data.success) {
+        // 2. Store the data inside scannedData
+        setScannedData(response.data.voucher);
+        
+        // 3. CRITICAL: Toggle your UI state to display the hidden confirmation layout card!
+        // Double-check if your file uses setScanStatus('detected') or a boolean like setIsModalOpen(true)
+        setScanStatus('detected'); 
+        
+        // 4. Flush the text input box clean
+        setManualRefCode(''); 
+        
+        console.log("Voucher loaded onto staging card:", response.data.voucher);
+      }
+    } catch (err) {
+      console.error("Voucher lookup failed:", err);
+      alert(err.response?.data?.message || "Failed to locate voucher reference data parameters.");
+    }
+  };
+
  const handleVerifyConfirm = async () => {
   // Ensure scannedData exists before reading properties to prevent crashes
   if (!scannedData) return alert("No active voucher data detected.");
@@ -526,22 +555,26 @@ const AdminDashboard = () => {
                         <p style={{ margin: '8px 0', fontSize: '14px' }}>
                           Voucher Ref: <strong style={{ letterSpacing: '0.5px', color: 'var(--maroon)' }}>{scannedData?.token}</strong>
                         </p>
+                        {/* FIXED: Resolves backend alias properties for student identification mapping */}
                         <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                          Student No: <strong style={{ color: '#333' }}>{scannedData?.studentNum || 'N/A'}</strong>
+                          Student No: <strong style={{ color: '#333' }}>{scannedData?.studentNum || scannedData?.studentNumber || 'N/A'}</strong>
                         </p>
+                        {/* FIXED: Resolves backend items text tracking summaries properties string payload */}
                         <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                          Items to Claim: <span style={{ color: '#555', fontWeight: '500' }}>{scannedData?.items || 'No items listed'}</span>
+                          Items to Claim: <span style={{ color: '#555', fontWeight: '500' }}>{scannedData?.items || scannedData?.itemsSummary || 'No items listed'}</span>
                         </p>
+                        {/* FIXED: Resolves backend cost vs totalCost metrics variations properties */}
                         <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                          Deduction Cost: <strong style={{ color: '#16a34a' }}>{scannedData?.cost || 0} pts</strong>
+                          Deduction Cost: <strong style={{ color: '#16a34a' }}>{scannedData?.cost !== undefined ? scannedData.cost : scannedData?.totalCost || 0} pts</strong>
                         </p>
                       </div>
 
                       <div className="action-row" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                        <button className="action-btn approve" onClick={() => handleRedemption('approve')} style={{ flex: 1, padding: '11px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        {/* FIXED: Calls handleVerifyConfirm directly to process points write down */}
+                        <button className="action-btn approve" onClick={handleVerifyConfirm} style={{ flex: 1, padding: '11px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
                           Confirm & Redeem
                         </button>
-                        <button className="action-btn reject" onClick={() => handleRedemption('reject')} style={{ flex: 1, padding: '11px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        <button className="action-btn reject" onClick={() => { setScanStatus('idle'); setScannedData(null); }} style={{ flex: 1, padding: '11px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
                           Cancel
                         </button>
                       </div>
@@ -551,7 +584,8 @@ const AdminDashboard = () => {
 
                 {/* ─── NEW: HARDWARE FAILURE MANUAL INPUT SECTION ────────────────────── */}
                 {scanStatus === 'idle' && (
-                  <form onSubmit={handleVerifyConfirm} style={{ borderTop: '1px dashed #ddd', paddingTop: '20px', width: '100%' }}>
+                  /* FIXED: Changed target from handleVerifyConfirm to handleManualSubmit for initial search lookup steps */
+                  <form onSubmit={handleManualSubmit} style={{ borderTop: '1px dashed #ddd', paddingTop: '20px', width: '100%' }}>
                     <p style={{ fontSize: '0.8rem', color: '#666', fontWeight: 'bold', marginBottom: '10px', textAlign: 'left' }}>
                       Trouble scanning? Enter manually.
                     </p>
@@ -576,9 +610,6 @@ const AdminDashboard = () => {
 
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
       {/* INVENTORY EDIT CONTROL OVERLAY MODAL INTERFACE */}
       {editingItem && (
