@@ -256,30 +256,31 @@ const AdminDashboard = () => {
   };
 
  const handleVerifyConfirm = async () => {
+  // Ensure scannedData exists before reading properties to prevent crashes
+  if (!scannedData) return alert("No active voucher data detected.");
+
   try {
     const payload = {
-      // mapping parameters for QR path code
+      // 1. Map the token reference universally
       qrTokenString: scannedData.token, 
-      
-      // mapping parameters for your newly built manual path code
       token: scannedData.token, 
-      studentNumber: scannedData.studentNum,
-      totalCost: scannedData.cost,
-      summary: scannedData.items
+      
+      // 2. Add fallbacks to accept either the backend model key or the lookup alias key
+      studentNumber: scannedData.studentNumber || scannedData.studentNum,
+      totalCost: scannedData.totalCost !== undefined ? scannedData.totalCost : scannedData.cost,
+      summary: scannedData.itemsSummary || scannedData.items
     };
 
-    // 1. Determine which endpoint to hit based on how the data was retrieved
-    // If it has 'studentNum' as a root key, it came from your manual lookup route!
-    const endpoint = scannedData.studentNum 
-      ? '/admin/confirm-manual-redeem' 
-      : '/admin/verify-redemption';
+    // 3. Select the correct endpoint safely
+    const isManualInput = scannedData.studentNum !== undefined;
+    const endpoint = isManualInput ? '/admin/confirm-manual-redeem' : '/admin/verify-redemption';
 
     const response = await api.post(endpoint, payload);
 
     if (response.data.success) {
       alert(response.data.message);
-      setScanStatus('idle'); // Close out the overlay card
-      setScannedData(null);  // Reset state definitions clean
+      setScanStatus('idle'); // Close the overlay card gracefully
+      setScannedData(null);  // Clear state entries
     }
   } catch (err) {
     console.error("Redemption confirmation crashed:", err);
